@@ -1,12 +1,12 @@
 ﻿using System.Reflection.Emit;
-
 namespace LIA;
 
-public class FunctionGen
+public class FunctionGen : ICtxBGenBp
 {
     private string _head;
-    private List<string> _instructions = new List<string>();
-    private List<(string, Type)> _localVariables = new List<(string, Type)>();
+    public List<string> Instructions { get; set; } = new List<string>();
+    public List<(string, Type)> LocalVariables = new List<(string, Type)>();
+    private List<Segment> _segments = new List<Segment>();
 
     // Track stack size to dynamically set 'maxstack'
     private int _stacksize = 0;
@@ -17,36 +17,80 @@ public class FunctionGen
         _head = attrs.Generate();
     }
 
-    private void IncStackSize(int v = 1)
+    public Segment SpawnSegment(string name)
+    {
+        var segment = new Segment(this, name);
+        _segments.Add(segment);
+        return segment;
+    }
+
+    public Segment SpawnStartSegment() => SpawnSegment("Start");
+
+    public void IncStackSize(int v = 1)
     {
         _stacksize += v;
         if (_stacksize > _maxstacksize) _maxstacksize = _stacksize;
     }
 
-    private void DecStackSize(int v = 1) => _stacksize -= v;
+    public void DecStackSize(int v = 1) => _stacksize -= v;
+    public void EntryPoint() => AppendRaw(".entrypoint");
 
     public string Get()
     {
         string total = ".method " + _head + " { ";
         total += $"\n  .maxstack {_maxstacksize}";
-        if (_instructions.Count != 0 || _localVariables.Count != 0) total += "\n";
+        if (Instructions.Count != 0 || LocalVariables.Count != 0) total += "\n";
         var locals = new List<string>();
-        if (_localVariables.Count != 0) locals.Add(".locals init (");
-        foreach (var local in _localVariables)
+        if (LocalVariables.Count != 0) locals.Add(".locals init (");
+        foreach (var local in LocalVariables)
         {
             locals.Add($"  {local.Item2.Get()} {local.Item1}");
         }
-        if (_localVariables.Count != 0) locals.Add(")");
-        foreach (var instruction in locals.Concat(_instructions))
+        if (LocalVariables.Count != 0) locals.Add(")");
+        foreach (var instruction in locals.Concat(Instructions))
         {
             total += "  " + instruction + "\n";
+        }
+
+        total += "\n";
+        
+        foreach (var segment in _segments)
+        {
+            total += "  " + segment.Get() + "\n";
         }
         total += "}";
         return total;
     }
 
-    private void AppendRaw(string operation) => _instructions.Add(operation);
-    public void AddComment(string comment) => _instructions[^1] += ("    // " + comment);
+    private void AppendRaw(string operation) => Instructions.Add(operation);
+    public void AddComment(string comment) => Instructions[^1] += ("    // " + comment);
+}
+
+public class Segment : ICtxBGenBp
+{
+    private string _name;
+    private FunctionGen _function;
+    public List<string> Instructions { get; set; } = new List<string>();
+
+    public Segment(FunctionGen function, string name)
+    {
+        _name = name;
+        _function = function;
+    }
+    
+    private void AppendRaw(string operation) => Instructions.Add(operation);
+    public void AddComment(string comment) => Instructions[^1] += ("    // " + comment);
+
+    public string Get()
+    {
+        string total = $"{_name}:\n";
+        foreach (var instruction in Instructions)
+        {
+            total += "  " + instruction + "\n";
+        }
+
+        return total;
+    }
     
     public void Emit(OpCode opCode)
     {
@@ -62,7 +106,7 @@ public class FunctionGen
 
     public void LoadArg(int n)
     {
-        IncStackSize();
+        _function.IncStackSize();
         switch (n)
         {
             case 0: Emit(OpCodes.Ldarg_0); break;
@@ -75,13 +119,13 @@ public class FunctionGen
 
     public void LoadInt(long num, bool longform)
     {
-        IncStackSize();
+        _function.IncStackSize();
         if (longform) Emit(OpCodes.Ldc_I8, num);
         else Emit(OpCodes.Ldc_I4, num);
     }
 
     public void Discard() {
-        DecStackSize();
+        _function.DecStackSize();
         Emit(OpCodes.Pop);
     }
 
@@ -93,25 +137,21 @@ public class FunctionGen
 
     public void LoadFloat(double num, bool longform)
     {
-        IncStackSize();
+        _function.IncStackSize();
         if (longform) Emit(OpCodes.Ldc_R8, num);
         else Emit(OpCodes.Ldc_R4, num);
     }
-
-    public void SetMaxStack(int maxstack) => _stacksize = _maxstacksize = maxstack;
-
-    public void EntryPoint() => AppendRaw(".entrypoint");
-
+    
     public void Ret() => Emit(OpCodes.Ret);
     public void Dup()
     {
-        IncStackSize();
+        _function.IncStackSize();
         Emit(OpCodes.Dup);
     }
 
     public void StoreLoc(int n)
     {
-        DecStackSize();
+        _function.DecStackSize();
         switch (n)
         {
             case 0: Emit(OpCodes.Stloc_0); break;
@@ -124,13 +164,13 @@ public class FunctionGen
 
     public void LoadString(string str)
     {
-        IncStackSize();
+        _function.IncStackSize();
         Emit(OpCodes.Ldstr, $"{Utils.Quote()}{str}{Utils.Quote()}");
     }
 
     public void StoreArg(int n)
     {
-        DecStackSize();
+        _function.DecStackSize();
         Emit(OpCodes.Starg, n);
     }
 
@@ -182,30 +222,44 @@ public class FunctionGen
 
     public void PerformOp(MathOps operation)
     {
-        DecStackSize();
+        _function.DecStackSize();
         Emit(ConvMathOpCode(operation));
     }
     public void PerformOp(CmpOps operation)
     {
-        DecStackSize();
+        _function.DecStackSize();
         Emit(ConvCmpOpCode(operation, false));
     }
 
     public void PerformOpBranch(CmpOps cmpOps, string branchLabel)
     {
-        DecStackSize(2);
+        _function.DecStackSize(2);
         Emit(ConvCmpOpCode(cmpOps, true), branchLabel);
     }
 
+    public void PerformOpBranch(CmpOps cmpOps, Segment branchSegment) => PerformOpBranch(cmpOps, branchSegment._name);
+
+    public void Branch(string label)
+    {
+        Emit(OpCodes.Br, label);
+    }
+
+    public void Branch(Segment segment) => Branch(segment._name);
+    
+    public void Loop() => Branch(this);
+    
+    public void Loop(CmpOps cmpOps, string label) => PerformOpBranch(cmpOps, label);
+    public void Loop(CmpOps cmpOps, Segment segment) => PerformOpBranch(cmpOps, segment._name);
+    
     public int InitVar(string name, Type type)
     {
-        _localVariables.Add((name, type));
-        return _localVariables.Count - 1;
+        _function.LocalVariables.Add((name, type));
+        return _function.LocalVariables.Count - 1;
     }
 
     public void LoadLoc(int n)
     {
-        IncStackSize();
+        _function.IncStackSize();
         switch (n)
         {
             case 0: Emit(OpCodes.Ldloc_0); break;
@@ -215,9 +269,7 @@ public class FunctionGen
             default: Emit(OpCodes.Ldloc, n); break;
         }
     }
-
-    public void Label(string name) => AppendRaw($"{name}:");
-
+    
     public void Call(FunctionAttributes funcAttrs)
     {
         List<string> stack = new List<string>();
@@ -231,9 +283,12 @@ public class FunctionGen
         }
         stack.Add($"{funcAttrs.Namespace}::{funcAttrs.Name}");
 
-        foreach (var argument in funcAttrs.Arguments)
+        if (funcAttrs.Arguments != null)
         {
-            args.Add(argument.Item2.Get());
+            foreach (var argument in funcAttrs.Arguments)
+            {
+                args.Add(argument.Item2.Get());
+            }
         }
         
         stack.Add($"({string.Join(", ", args)})");
