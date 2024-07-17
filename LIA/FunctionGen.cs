@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Reflection;
-using System.Reflection.Emit;
+﻿using System.Reflection.Emit;
 
 namespace LIA;
 
@@ -31,7 +28,7 @@ public class FunctionGen
     public string Get()
     {
         string total = ".method " + _head + " { ";
-        total += $"\n  .maxstack {_stacksize}";
+        total += $"\n  .maxstack {_maxstacksize}";
         if (_instructions.Count != 0 || _localVariables.Count != 0) total += "\n";
         var locals = new List<string>();
         if (_localVariables.Count != 0) locals.Add(".locals init (");
@@ -128,7 +125,7 @@ public class FunctionGen
     public void LoadString(string str)
     {
         IncStackSize();
-        Emit(OpCodes.Ldstr, str);
+        Emit(OpCodes.Ldstr, $"{Utils.Quote()}{str}{Utils.Quote()}");
     }
 
     public void StoreArg(int n)
@@ -227,11 +224,11 @@ public class FunctionGen
         List<string> args = new List<string>();
         
         stack.Add("call");
+        stack.Add(funcAttrs.Type.Get());
         if (funcAttrs.Library != null)
         {
             stack.Add($"[{funcAttrs.Library}]");
         }
-        stack.Add(funcAttrs.Type.Get());
         stack.Add($"{funcAttrs.Namespace}::{funcAttrs.Name}");
 
         foreach (var argument in funcAttrs.Arguments)
