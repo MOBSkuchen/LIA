@@ -34,6 +34,15 @@
             AddToken(TokenType.Number, _code.Substring(startPos, _counter - startPos), startPos, _counter);
         }
 
+        public void LexComment()
+        {
+            while (_counter < _code.Length)
+            {
+                char c = _code[_counter++];
+                if (c != '\n') continue;
+            }
+        }
+
         private void LexIdentifier()
         {
             int startPos = _counter - 1;
@@ -111,6 +120,7 @@
                     case '<': AddSingleToken(TokenType.LessThan); break;
                     case '>': AddSingleToken(TokenType.GreaterThan); break;
                     case '"': LexString(); break;
+                    case '#': LexComment(); break;
                     default:
                         if (char.IsWhiteSpace(c))
                             continue;
@@ -136,7 +146,6 @@
         Not,
         String,
         Number,
-        Comment,
         Public,
         Private,
         Class,
