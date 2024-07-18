@@ -248,8 +248,7 @@ public class Segment : ICtxBGenBp
     
     public void Loop() => Branch(this);
     
-    public void Loop(CmpOps cmpOps, string label) => PerformOpBranch(cmpOps, label);
-    public void Loop(CmpOps cmpOps, Segment segment) => PerformOpBranch(cmpOps, segment._name);
+    public void Loop(CmpOps cmpOps) => PerformOpBranch(cmpOps, _name);
     
     public int InitVar(string name, Type type)
     {

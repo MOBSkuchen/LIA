@@ -48,6 +48,8 @@ public class NameSpace(string name)
         {
             total += $"  {instruction}\n";
         }
+        
+        _instructions.RemoveAt(_instructions.Count - 1);
 
         foreach (var classG in _classes)
         {
