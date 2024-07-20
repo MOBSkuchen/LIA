@@ -74,9 +74,9 @@ public static class ConsoleLib
         Apply(MakeColor(textType, foreground, background));
     }
 
-    public static string ResetColor()
+    public static string ResetColor(bool resetText = true, bool resetForeground = true, bool resetBackground = true)
     {
-        return MakeColor(0, 0, 0);
+        return MakeColor(Convert.ToInt32(resetText), Convert.ToInt32(resetForeground), Convert.ToInt32(resetBackground));
     }
 
     public static void ApplyResetColor()
