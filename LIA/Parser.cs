@@ -279,12 +279,42 @@ public class Parser(Lexer lexer)
         return new FunctionDecl(name, type, parameters, body, isPublic, startPos, body.EndPos);
     }
 
+    private ClassDecl ParseClass()
+    {
+        int startPos = PreviousToken.StartPos;
+        bool isPublic = Match(TokenType.Public);
+        if (!isPublic) Consume(TokenType.Private, "Must declare public or private class");
+        var name = Consume(TokenType.Identifier, "Must declare the name").Content;
+        Consume(TokenType.Colon, "Expected colon after class-head declaration");
+        List<FunctionDecl> methods = new List<FunctionDecl>();
+        while (!IsAtEnd())
+        {
+            if (Match(TokenType.Def))
+            {
+                methods.Add(ParseFunction());
+            }
+
+            if (Match(TokenType.Semicolon)) return new ClassDecl(name, isPublic, methods, startPos, PreviousToken.EndPos);
+        }
+        ThrowInvalidTokenError(TokenType.ClassLevel, CurrentToken.Type, "For example a function definition or terminating semicolon");
+        return null;
+    }
+
     public List<Stmt> ParseTopLevel()
     {
         List<Stmt> statements = new List<Stmt>();
         while (!IsAtEnd())
         {
-            if (Match(TokenType.Def)) statements.Add(ParseFunction());
+            if (Match(TokenType.Namespace))
+            {
+                var curTok = Consume(TokenType.Identifier, "Namespace must have a name");
+                statements.Add(new NamespaceDecl(curTok.Content, PreviousToken.StartPos, CurrentToken.EndPos));
+            }
+            else if (Match(TokenType.Class))
+            {
+                statements.Add(ParseClass());
+            }
+            else ThrowInvalidTokenError(TokenType.TopLevel, CurrentToken.Type, "For example a namespace declaration or class definition");
         }
 
         return statements;
