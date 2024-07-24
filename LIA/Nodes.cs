@@ -114,11 +114,17 @@
     }
 
     // Class Declaration
-    public class ClassDecl(string name, List<FunctionDecl> methods, int startPos, int endPos)
+    public class ClassDecl(string name, bool @public, List<FunctionDecl> methods, int startPos, int endPos)
         : Stmt(startPos, endPos)
     {
         public string Name { get; } = name;
+        public bool Public { get; } = @public;
         public List<FunctionDecl> Methods { get; } = methods;
+    }
+
+    public class NamespaceDecl(string name, int startPos, int endPos) : Stmt(startPos, endPos)
+    {
+        public string Name { get; } = name;
     }
 
 }
