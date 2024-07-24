@@ -22,4 +22,40 @@ public class Utils
     {
         File.WriteAllText(path, text);
     }
+
+    public static (int, int) GetLineNumber(string code, int position)
+    {
+        int newCharCounter = 0;
+        int tempCounter = 0;
+        int lineNumber = 0;
+        for (int i = 0; i < position; i++)
+        {
+            tempCounter++;
+            if (code[i] == '\n')
+            {
+                lineNumber++;
+                tempCounter = 0;
+            }
+        }
+        newCharCounter += tempCounter;
+        return (lineNumber, newCharCounter);
+    }
+}
+
+public class CodeFile
+{
+    public readonly string Filepath;
+    public readonly string Text;
+    public CodeFile(string filepath)
+    {
+        Filepath = filepath;
+        Text = File.ReadAllText(Filepath);
+    }
+}
+
+public struct CodeLocation(int startPosition, int endPosition, CodeFile codeFile)
+{
+    public int StartPosition = startPosition;
+    public int EndPosition = endPosition;
+    public CodeFile CodeFile = codeFile;
 }
