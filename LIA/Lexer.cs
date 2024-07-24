@@ -5,10 +5,12 @@
         private string _code;
         private int _counter;
         public List<Token> Tokens { get; private set; }
+        public CodeFile CodeFile { get; private set; }
 
-        public Lexer(string text)
+        public Lexer(CodeFile codeFile)
         {
-            _code = text;
+            CodeFile = codeFile;
+            _code = codeFile.Text;
             _counter = 0;
             Tokens = new List<Token>();
         }
@@ -59,6 +61,7 @@
                 "if" => TokenType.If,
                 "else" => TokenType.Else,
                 "elif" => TokenType.Elif,
+                "while" => TokenType.While,
                 _ => TokenType.Identifier
             };
             AddToken(type, identifier, startPos, _counter);
@@ -160,6 +163,7 @@
         If,
         Else,
         Elif,
+        While,
         GreaterThan,
         LessThan,
         GreaterThanEquals,
@@ -167,7 +171,13 @@
         NotEquals,
         Dot,
         And,
-        Or
+        Or,
+        // not real
+        Statement,
+        ExpressionLike,
+        Operand,
+        EndOfFile,
+        Token
     }
 
     public class Token
