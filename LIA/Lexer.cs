@@ -62,6 +62,7 @@
                 "else" => TokenType.Else,
                 "elif" => TokenType.Elif,
                 "while" => TokenType.While,
+                "namespace" => TokenType.Namespace,
                 _ => TokenType.Identifier
             };
             AddToken(type, identifier, startPos, _counter);
@@ -172,12 +173,15 @@
         Dot,
         And,
         Or,
+        Namespace,
         // not real
         Statement,
         ExpressionLike,
         Operand,
         EndOfFile,
-        Token
+        Token,
+        TopLevel,
+        ClassLevel
     }
 
     public class Token
