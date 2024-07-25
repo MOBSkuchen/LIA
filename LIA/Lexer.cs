@@ -133,7 +133,7 @@
                     case '.': AddSingleToken(TokenType.Dot); break;
                     case ',': AddSingleToken(TokenType.Comma); break;
                     case '|': AddSingleToken(TokenType.Or); break;
-                    case '!': AddSingleToken(TokenType.Not); break;
+                    case '!': AddSingleToken(TokenType.ExclamationMark); break;
                     case '=': LexEquals(); break;
                     case '&': AddSingleToken(TokenType.And); break;
                     case '<': AddSingleToken(TokenType.LessThan); break;
@@ -162,7 +162,7 @@
         Star,
         Slash,
         Equals,
-        Not,
+        ExclamationMark,
         String,
         Number,
         Public,
