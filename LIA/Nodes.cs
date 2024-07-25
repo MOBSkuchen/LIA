@@ -40,9 +40,9 @@
         public string Value { get; } = value;
     }
 
-    public class FunctionCallExpr(string name, List<Expr>? arguments, int startPos, int endPos) : Expr(startPos, endPos)
+    public class FunctionCallExpr(IdentifierExpr name, List<Expr>? arguments, int startPos, int endPos) : Expr(startPos, endPos)
     {
-        public string Name { get; } = name;
+        public IdentifierExpr Name { get; } = name;
         public List<Expr>? Arguments { get; } = arguments;
     }
 

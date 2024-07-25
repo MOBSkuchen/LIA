@@ -1,9 +1,10 @@
 ﻿namespace LIA;
 
-public struct FunctionAttributes(string ns, string name, 
+public struct FunctionAttributes(string ns, string @class, string name, 
     bool isStatic, bool isPublic, Type type, List<(string, Type)>? args, string? library = null)
 {
     public string Namespace = ns;
+    public string Class = @class;
     public string? Library = library;
     public bool IsStatic = isStatic;
     public bool IsPublic = isPublic;
@@ -25,9 +26,11 @@ public struct FunctionAttributes(string ns, string name,
 
         if (Arguments != null)
         {
-            foreach (var valueTuple in Arguments)
+            for (var index = 0; index < Arguments.Count; index++)
             {
-                stack.Add($"{valueTuple.Item2.Get()} {valueTuple.Item1},");
+                var valueTuple = Arguments[index];
+                var fmt = (index + 1) >= Arguments.Count ? String.Empty : ",";
+                stack.Add($"{valueTuple.Item2.Get()} {valueTuple.Item1}{fmt}");
             }
         }
 

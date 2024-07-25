@@ -5,6 +5,7 @@ public class NameSpace(string name)
     private List<string> _instructions = new List<string>();
     public readonly List<ClassGen> Classes = new List<ClassGen>();
     private readonly string _head = $".namespace {name}";
+    public readonly string Name = name;
 
     public void WriteToFile(string path)
     {

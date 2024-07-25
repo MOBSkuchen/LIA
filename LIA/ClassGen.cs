@@ -13,8 +13,8 @@ public class ClassGen
 
     public FunctionGen SpawnFunction(string name, bool isStatic, bool isPublic, Type type, List<(string, Type)>? args)
     {
-        var function = new FunctionGen(new FunctionAttributes($"{_classAttributes.NameSpace}.{_classAttributes.Name}"
-            , name, isStatic, isPublic, type, args));
+        var function = new FunctionGen(new FunctionAttributes($"{_classAttributes.NameSpace}.{_classAttributes.Name}",
+            _classAttributes.Name, name, isStatic, isPublic, type, args));
         _functions.Add(function);
         return function;
     }

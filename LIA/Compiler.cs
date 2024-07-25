@@ -30,6 +30,9 @@ public class Compiler(CodeFile codeFile)
         {"none", "void"}, 
         {"string", "string"}, 
     };
+
+    private Dictionary<string, FunctionAttributes> _callables = new Dictionary<string, FunctionAttributes>();
+    
     private bool _mainDefined = false;
 
     private CodeLocation GenCodeLocForNode(AstNode token) => new CodeLocation(token.StartPos, token.EndPos, _codeFile);
@@ -43,6 +46,10 @@ public class Compiler(CodeFile codeFile)
         $"The function '{functionDecl.Name.Name}' must return type {functionDecl.ReturnType.Name}", ErrorCodes.TypeConflict);
     private void ThrowUnknownVariableError(IdentifierExpr token) => ThrowError(token,
         $"The variable '{token.Name}' is not defined in this context", ErrorCodes.UnknownVariable);
+
+    private void ThrowUnknownFunctionError(FunctionCallExpr functionCall) => ThrowError(functionCall.Name,
+        $"The function '{functionCall.Name.Name}' was not found or could not be acessed in this context!",
+        ErrorCodes.UnknownFunction);
     
     private Type ConvertType(IdentifierExpr identifierExpr)
     {
@@ -92,7 +99,29 @@ public class Compiler(CodeFile codeFile)
 
         foreach (var func in classDecl.Methods)
         {
+            _callables.Add(func.Name.Name, new FunctionAttributes(_nameSpaces[^1].Name, classDecl.Name, func.Name.Name, true, func.Public, ConvertType(func.ReturnType), ConvertParameters(func.Parameters)));
+        }
+        
+        foreach (var func in classDecl.Methods)
+        {
             ParseFunction(func, classGen.SpawnFunction(func.Name.Name, true, func.Public, ConvertType(func.ReturnType), ConvertParameters(func.Parameters)));
+        }
+    }
+
+    private Operation ConvertOperation(TokenType operand)
+    {
+        switch (operand)
+        {
+            case TokenType.Plus: return Operation.Add;
+            case TokenType.Slash: return Operation.Div;
+            case TokenType.Star: return Operation.Mul;
+            case TokenType.Minus: return Operation.Sub;
+            case TokenType.Equals: return Operation.Equals;
+            case TokenType.GreaterThan: return Operation.GreaterThan;
+            case TokenType.GreaterThanEquals: return Operation.GreaterThanEquals;
+            case TokenType.LessThan: return Operation.LesserThan;
+            case TokenType.LessThanEquals: return Operation.LesserThanEquals;
+            default: throw new Exception("oops");
         }
     }
 
@@ -104,6 +133,31 @@ public class Compiler(CodeFile codeFile)
             segment.LoadInt(((IntegerExpr)expr).Value, ((IntegerExpr)expr).Value > int.MaxValue);
         else if (expr.GetType() == typeof(StringExpr))
             segment.LoadString(((StringExpr)expr).Value);
+        else if (expr.GetType() == typeof(FunctionCallExpr))
+        {
+            if (!_callables.ContainsKey(((FunctionCallExpr)expr).Name.Name)) ThrowUnknownFunctionError((FunctionCallExpr)expr);
+            foreach (var argument in ((FunctionCallExpr)expr).Arguments!)
+            {
+                PutExprOnStack(argument, segment, localsLookup);
+            }
+            segment.Call(_callables[((FunctionCallExpr)expr).Name.Name]);
+        }
+        else if (expr.GetType() == typeof(BinaryExpr))
+        {
+            PutExprOnStack(((BinaryExpr)expr).Left, segment, localsLookup);
+            PutExprOnStack(((BinaryExpr)expr).Right, segment, localsLookup);
+            segment.PerformOp(ConvertOperation(((BinaryExpr)expr).Operator));
+        }
+        else if (expr.GetType() == typeof(UnaryExpr))
+        {
+            PutExprOnStack(((UnaryExpr)expr).Operand, segment, localsLookup);
+            if (((UnaryExpr)expr).Operator == TokenType.ExclamationMark) segment.PerformOp(Operation.Not);
+            if (((UnaryExpr)expr).Operator == TokenType.Minus)
+            {
+                segment.LoadInt(1, false);
+                segment.PerformOp(Operation.Sub);
+            }
+        }
         else if (expr.GetType() == typeof(IdentifierExpr))
         {
             var value = localsLookup.Get(((IdentifierExpr)expr).Name);
@@ -125,6 +179,15 @@ public class Compiler(CodeFile codeFile)
                 : RawConvertType("i32"))!;
         if (expr.GetType() == typeof(StringExpr))
             return RawConvertType("string")!;
+        if (expr.GetType() == typeof(UnaryExpr))
+            return InferExprType(((UnaryExpr)expr).Operand, functionGen, localsLookup);
+        if (expr.GetType() == typeof(BinaryExpr)) return InferExprType(((BinaryExpr)expr).Left, functionGen, localsLookup);
+        if (expr.GetType() == typeof(FunctionCallExpr))
+        {
+            if (_callables.ContainsKey(((FunctionCallExpr)expr).Name.Name))
+                return _callables[((FunctionCallExpr)expr).Name.Name].Type;
+            ThrowUnknownFunctionError((FunctionCallExpr)expr);
+        }
         if (expr.GetType() == typeof(IdentifierExpr))
         {
             var value = localsLookup.Get(((IdentifierExpr)expr).Name);

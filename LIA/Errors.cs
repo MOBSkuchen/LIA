@@ -67,6 +67,7 @@ public enum ErrorCodes
     InvalidType,
     TypeConflict,
     UnknownVariable,
+    UnknownFunction
 }
 
 public enum WarningCodes

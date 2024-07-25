@@ -140,6 +140,7 @@ public class Parser(Lexer lexer)
             arguments.Add(arg);
             if (Match(TokenType.Comma)) continue;
             Consume(TokenType.CloseParen, "Expected a closing Parenthesis");
+            break;
         }
 
         if (arguments.Count == 0) return null; 
@@ -160,12 +161,12 @@ public class Parser(Lexer lexer)
         }
         if (Match(TokenType.Identifier))
         {
+            var ident = new IdentifierExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
             if (Match(TokenType.OpenParen))
             {
-                int startPos = PreviousToken.StartPos;
-                return new FunctionCallExpr(PreviousToken.Content, ParseArguments(), startPos, CurrentToken.EndPos);
+                return new FunctionCallExpr(ident, ParseArguments(), ident.StartPos, CurrentToken.EndPos);
             }
-            return new IdentifierExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
+            return ident;
         }
 
         if (Match(TokenType.String))
