@@ -107,7 +107,7 @@ public class Compiler(CodeFile codeFile)
         else if (expr.GetType() == typeof(IdentifierExpr))
         {
             var value = localsLookup.Get(((IdentifierExpr)expr).Name);
-            if (value == -1) ThrowUnknownVariableError(((IdentifierExpr)expr));
+            if (value == -1) ThrowUnknownVariableError((IdentifierExpr)expr);
             segment.LoadLoc(value);
         }
         else throw new Exception("Parser fucked up or I did, idk");
@@ -153,6 +153,7 @@ public class Compiler(CodeFile codeFile)
                 {
                     segment.InitVar(assignmentStmt.Name.Name, type);
                     localsLookup.Add(assignmentStmt.Name.Name);
+                    storeLoc = localsLookup.Current;
                 }
                 else
                 {

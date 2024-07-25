@@ -165,7 +165,7 @@ public class Parser(Lexer lexer)
                 int startPos = PreviousToken.StartPos;
                 return new FunctionCallExpr(PreviousToken.Content, ParseArguments(), startPos, CurrentToken.EndPos);
             }
-            return new IdentifierExpr(CurrentToken.Content, CurrentToken.StartPos, CurrentToken.EndPos);
+            return new IdentifierExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
         }
 
         if (Match(TokenType.String))
