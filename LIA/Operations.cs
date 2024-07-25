@@ -1,22 +1,20 @@
 ﻿namespace LIA;
 
-public enum CmpOps
+public enum Operation
 {
+    // Math ops -> i32, i64 / f32, f64
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+    Xor,
+    // Cmd Ops -> bool
     GreaterThan,
     GreaterThanEquals,
     LesserThan,
     LesserThanEquals,
     Equals,
     IsFalse,
-    IsTrue
-}
-
-public enum MathOps
-{
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    Xor
+    IsTrue,
 }

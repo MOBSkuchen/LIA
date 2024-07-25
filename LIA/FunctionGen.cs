@@ -185,62 +185,57 @@ public class Segment : ICtxBGenBp
      * and
      * a == b
      */
-    private OpCode ConvCmpOpCode(CmpOps cmpOps, bool branch)
+    private OpCode ConvCmpOpCode(Operation cmpOps, bool branch)
     {
         if (branch)
         {
             switch (cmpOps) {
-                case CmpOps.Equals: return OpCodes.Beq;
-                case CmpOps.GreaterThan: return OpCodes.Bgt;
-                case CmpOps.GreaterThanEquals: return OpCodes.Bge;
-                case CmpOps.LesserThan: return OpCodes.Blt;
-                case CmpOps.LesserThanEquals: return OpCodes.Ble;
-                case CmpOps.IsFalse: return OpCodes.Brfalse;
-                case CmpOps.IsTrue: return OpCodes.Brtrue;
+                case Operation.Equals: return OpCodes.Beq;
+                case Operation.GreaterThan: return OpCodes.Bgt;
+                case Operation.GreaterThanEquals: return OpCodes.Bge;
+                case Operation.LesserThan: return OpCodes.Blt;
+                case Operation.LesserThanEquals: return OpCodes.Ble;
+                case Operation.IsFalse: return OpCodes.Brfalse;
+                case Operation.IsTrue: return OpCodes.Brtrue;
             }
         }
         else
         {
             switch (cmpOps) {
-                case CmpOps.Equals: return OpCodes.Ceq;
-                case CmpOps.GreaterThan: return OpCodes.Cgt;
-                case CmpOps.LesserThan: return OpCodes.Clt;
+                case Operation.Equals: return OpCodes.Ceq;
+                case Operation.GreaterThan: return OpCodes.Cgt;
+                case Operation.LesserThan: return OpCodes.Clt;
             }
         }
         throw new Exception("Invalid cmp-op");
     }
 
-    private OpCode ConvMathOpCode(MathOps mathOps)
+    private OpCode ConvMathOpCode(Operation mathOps)
     {
         switch (mathOps)
         {
-            case MathOps.Add: return OpCodes.Add;
-            case MathOps.Sub: return OpCodes.Sub;
-            case MathOps.Mul: return OpCodes.Mul;
-            case MathOps.Div: return OpCodes.Div;
-            case MathOps.Rem: return OpCodes.Rem;
+            case Operation.Add: return OpCodes.Add;
+            case Operation.Sub: return OpCodes.Sub;
+            case Operation.Mul: return OpCodes.Mul;
+            case Operation.Div: return OpCodes.Div;
+            case Operation.Rem: return OpCodes.Rem;
             default: throw new Exception("Invalid math-op");
         }
     }
 
-    public void PerformOp(MathOps operation)
+    public void PerformOp(Operation operation)
     {
         _function.DecStackSize();
         Emit(ConvMathOpCode(operation));
     }
-    public void PerformOp(CmpOps operation)
-    {
-        _function.DecStackSize();
-        Emit(ConvCmpOpCode(operation, false));
-    }
 
-    public void PerformOpBranch(CmpOps cmpOps, string branchLabel)
+    public void PerformOpBranch(Operation cmpOps, string branchLabel)
     {
         _function.DecStackSize(2);
         Emit(ConvCmpOpCode(cmpOps, true), branchLabel);
     }
 
-    public void PerformOpBranch(CmpOps cmpOps, Segment branchSegment) => PerformOpBranch(cmpOps, branchSegment._name);
+    public void PerformOpBranch(Operation cmpOps, Segment branchSegment) => PerformOpBranch(cmpOps, branchSegment._name);
 
     public void Branch(string label)
     {
@@ -251,7 +246,7 @@ public class Segment : ICtxBGenBp
     
     public void Loop() => Branch(this);
     
-    public void Loop(CmpOps cmpOps) => PerformOpBranch(cmpOps, _name);
+    public void Loop(Operation cmpOps) => PerformOpBranch(cmpOps, _name);
     
     public int InitVar(string name, Type type)
     {
