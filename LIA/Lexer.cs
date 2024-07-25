@@ -47,10 +47,16 @@
 
         public void LexComment()
         {
+            bool longComment = CurrentChar == '*';
             while (_counter < _code.Length)
             {
                 char c = _code[_counter++];
-                if (c != '\n') continue;
+                if (!longComment && c == '\n') break;
+                if (longComment && c == '*')
+                {
+                    if (CurrentChar == '#')
+                        break;
+                }
             }
         }
 
