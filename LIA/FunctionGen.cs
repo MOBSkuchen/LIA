@@ -205,6 +205,7 @@ public class Segment : ICtxBGenBp
                 case Operation.Equals: return OpCodes.Ceq;
                 case Operation.GreaterThan: return OpCodes.Cgt;
                 case Operation.LesserThan: return OpCodes.Clt;
+                case Operation.Not: return OpCodes.Not;
             }
         }
         throw new Exception("Invalid cmp-op");

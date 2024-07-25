@@ -17,4 +17,6 @@ public enum Operation
     Equals,
     IsFalse,
     IsTrue,
+    // Something -> bool
+    Not,
 }
