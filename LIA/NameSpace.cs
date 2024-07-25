@@ -3,8 +3,8 @@
 public class NameSpace(string name)
 {
     private List<string> _instructions = new List<string>();
-    private List<ClassGen> _classes = new List<ClassGen>();
-    private string _head = $".namespace {name}";
+    public readonly List<ClassGen> Classes = new List<ClassGen>();
+    private readonly string _head = $".namespace {name}";
 
     public void WriteToFile(string path)
     {
@@ -31,7 +31,7 @@ public class NameSpace(string name)
     public ClassGen SpawnClass(bool isPublic, string name1)
     {
         var classG = new ClassGen(new ClassAttributes(name, isPublic, name1));
-        _classes.Add(classG);
+        Classes.Add(classG);
         return classG;
     }
 
@@ -51,7 +51,7 @@ public class NameSpace(string name)
         
         _instructions.RemoveAt(_instructions.Count - 1);
 
-        foreach (var classG in _classes)
+        foreach (var classG in Classes)
         {
             total += $"{Utils.FormatLines(classG.Get())}\n";
         }
