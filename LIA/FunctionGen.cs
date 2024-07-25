@@ -286,7 +286,7 @@ public class Segment : ICtxBGenBp
         {
             stack.Add($"[{funcAttrs.Library}]");
         }
-        stack.Add($"{funcAttrs.Namespace}::{funcAttrs.Class}.{funcAttrs.Name}");
+        stack.Add($"{funcAttrs.Namespace}.{funcAttrs.Class}::{funcAttrs.Name}");
 
         if (funcAttrs.Arguments != null)
         {
