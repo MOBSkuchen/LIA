@@ -31,8 +31,17 @@
         private void LexNumber()
         {
             int startPos = _counter - 1;
-            while (char.IsDigit(CurrentChar))
+            bool isDot = false;
+            while (char.IsDigit(CurrentChar) || CurrentChar == '.')
+            {
                 Advance();
+                if (CurrentChar == '.' && isDot)
+                {
+                    _counter--;
+                    break;
+                };
+                isDot = CurrentChar == '.';
+            }
             AddToken(TokenType.Number, _code.Substring(startPos, _counter - startPos), startPos, _counter);
         }
 
