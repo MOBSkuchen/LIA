@@ -24,6 +24,9 @@ public class FunctionGen : ICtxBGenBp
         return segment;
     }
 
+    public (string, Type)? GetLocalVariable(string name) =>
+        LocalVariables.Find(x => x.Item1 == name);
+
     public Segment SpawnStartSegment() => SpawnSegment("Start");
 
     public void IncStackSize(int v = 1)
