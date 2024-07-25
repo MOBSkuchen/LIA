@@ -37,8 +37,14 @@ public class Errors
         $"{lines[startPos.Item1].Substring(startPos.Item2, endPos.Item2 - startPos.Item2)}" + ConsoleLib.ResetColor() +
         $"{ConsoleLib.MakeColor(ConsoleLib.TextItalic, ConsoleLib.FgMagenta)}{lines[startPos.Item1].Substring(endPos.Item2, lines[startPos.Item1].Length - endPos.Item2)}", ConsoleLib.TextItalic, ConsoleLib.FgMagenta));
         if (startPos.Item1 != (lines.Count - 1)) Console.WriteLine($"{startPos.Item1+1} | {lines[startPos.Item1+1]}");
-        throw new Exception();
         Exit(errNum);
+    }
+
+    public static void Warning(WarningCodes warningCodes, string message)
+    {
+        Console.WriteLine($"{ConsoleLib.As("Warning", ConsoleLib.TextBold, ConsoleLib.FgBrightYellow)}" +
+                          $" {ConsoleLib.As(warningCodes.ToString(), ConsoleLib.TextBold, ConsoleLib.FgBrightYellow)}" +
+                          $" [{ConsoleLib.As(((int)warningCodes).ToString(), 0, ConsoleLib.FgCyan)}] : {message}");
     }
 
     public static void Exit(ErrorCodes errorCode)
@@ -57,5 +63,15 @@ public enum ErrorCodes
     InvalidToken,
     EndOfFile,
     SyntaxError,
-    MissingValue
+    MissingValue,
+    InvalidType,
+    TypeConflict,
+    UnknownVariable,
+}
+
+public enum WarningCodes
+{
+    None,
+    Unknown,
+    MainNotDefined
 }
