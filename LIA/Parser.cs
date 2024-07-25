@@ -247,16 +247,19 @@ public class Parser(Lexer lexer)
         return null;
     }
 
-    private List<(string, string)> ParseParameters()
+    public IdentifierExpr CreateIdent(Token token) =>
+        new (token.Content, token.StartPos, token.EndPos);
+    
+    private List<ParameterExpr> ParseParameters()
     {
-        List<(string, string)> parameters = new List<(string, string)>();
+        List<ParameterExpr> parameters = new List<ParameterExpr>();
         while (!IsAtEnd())
         {
             var name = Consume(TokenType.Identifier, 
-                "Expected a parameter declaration or closing parenthesis").Content;
+                "Expected a parameter declaration or closing parenthesis");
             Consume(TokenType.Colon, "Expected a colon here");
-            var type = Consume(TokenType.Identifier, "Parameters must have types").Content;
-            parameters.Add((name, type));
+            var type = Consume(TokenType.Identifier, "Parameters must have types");
+            parameters.Add(new ParameterExpr(CreateIdent(name), CreateIdent(type), name.StartPos, type.EndPos));
             if (Match(TokenType.CloseParen)) break;
             if (Match(TokenType.Comma)) continue;
             ThrowInvalidTokenError(TokenType.CloseParen, CurrentToken.Type, "Expected a closing parenthesis");
@@ -270,13 +273,13 @@ public class Parser(Lexer lexer)
         int startPos = PreviousToken.StartPos;
         bool isPublic = Match(TokenType.Public);
         if (!isPublic) Consume(TokenType.Private, "Must declare public or private function");
-        var type = Consume(TokenType.Identifier, "Must declare a return type").Content;
-        var name = Consume(TokenType.Identifier, "Must declare the name").Content;
-        List<(string, string)> parameters = new List<(string, string)>();
+        var type = Consume(TokenType.Identifier, "Must declare a return type");
+        var name = Consume(TokenType.Identifier, "Must declare the name");
+        List<ParameterExpr> parameters = new List<ParameterExpr>();
         if (Match(TokenType.OpenParen)) parameters = ParseParameters();
         Consume(TokenType.Colon, "Expected colon after function-head declaration");
         var body = ParseBody();
-        return new FunctionDecl(name, type, parameters, body, isPublic, startPos, body.EndPos);
+        return new FunctionDecl(CreateIdent(name), CreateIdent(type), parameters, body, isPublic, startPos, CurrentToken.EndPos);
     }
 
     private ClassDecl ParseClass()

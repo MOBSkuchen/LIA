@@ -93,23 +93,29 @@
         public Expr Condition { get; } = condition;
         public BlockStmt Body { get; } = body;
     }
+
+    public class ParameterExpr(IdentifierExpr name, IdentifierExpr type, int startPos, int endPos) : Expr(startPos, endPos)
+    {
+        public IdentifierExpr Name = name;
+        public IdentifierExpr Type = type;
+    }
     
 
     // Function Declaration
     public class FunctionDecl(
-        string name,
-        string returnType,
-        List<(string, string)> parameters,
+        IdentifierExpr name,
+        IdentifierExpr returnType,
+        List<ParameterExpr> parameters,
         BlockStmt body,
         bool @public,
         int startPos,
         int endPos)
         : Stmt(startPos, endPos)
     {
-        public string Name { get; } = name;
-        public string ReturnType { get; } = returnType;
+        public IdentifierExpr Name { get; } = name;
+        public IdentifierExpr ReturnType { get; } = returnType;
         public readonly bool Public = @public;
-        public List<(string, string)> Parameters { get; } = parameters;
+        public List<ParameterExpr> Parameters { get; } = parameters;
         public BlockStmt Body { get; } = body;
     }
 
