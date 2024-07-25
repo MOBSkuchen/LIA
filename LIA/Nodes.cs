@@ -25,9 +25,19 @@
         public TokenType Operator { get; } = @operator;
     }
 
-    public class LiteralExpr(object value, int startPos, int endPos) : Expr(startPos, endPos)
+    public class IntegerExpr(long number, int startPos, int endPos) : Expr(startPos, endPos)
     {
-        public object Value { get; } = value;
+        public long Value { get; } = number;
+    }
+    
+    public class FloatExpr(double number, int startPos, int endPos) : Expr(startPos, endPos)
+    {
+        public double Value { get; } = number;
+    }
+
+    public class StringExpr(string value, int startPos, int endPos) : Expr(startPos, endPos)
+    {
+        public string Value { get; } = value;
     }
 
     public class FunctionCallExpr(string name, List<Expr>? arguments, int startPos, int endPos) : Expr(startPos, endPos)
