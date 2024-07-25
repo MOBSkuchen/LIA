@@ -45,10 +45,14 @@ public class FunctionGen : ICtxBGenBp
         if (Instructions.Count != 0 || LocalVariables.Count != 0) total += "\n";
         var locals = new List<string>();
         if (LocalVariables.Count != 0) locals.Add(".locals init (");
-        foreach (var local in LocalVariables)
+
+        for (var index = 0; index < LocalVariables.Count; index++)
         {
-            locals.Add($"  {local.Item2.Get()} {local.Item1}");
+            var local = LocalVariables[index];
+            var fmt = (index + 1) >= LocalVariables.Count ? String.Empty : ",";
+            locals.Add($"  {local.Item2.Get()} {local.Item1}{fmt}");
         }
+
         if (LocalVariables.Count != 0) locals.Add(")");
         foreach (var instruction in locals.Concat(Instructions))
         {
@@ -266,6 +270,9 @@ public class Segment : ICtxBGenBp
             case 3: Emit(OpCodes.Ldloc_3); break;
             default: Emit(OpCodes.Ldloc, n); break;
         }
+        // Regenerative store
+        Dup();
+        StoreLoc(n);
     }
     
     public void Call(FunctionAttributes funcAttrs)
@@ -279,7 +286,7 @@ public class Segment : ICtxBGenBp
         {
             stack.Add($"[{funcAttrs.Library}]");
         }
-        stack.Add($"{funcAttrs.Namespace}::{funcAttrs.Name}");
+        stack.Add($"{funcAttrs.Namespace}::{funcAttrs.Class}.{funcAttrs.Name}");
 
         if (funcAttrs.Arguments != null)
         {
