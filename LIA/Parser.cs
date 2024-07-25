@@ -151,7 +151,12 @@ public class Parser(Lexer lexer)
     {
         if (Match(TokenType.Number))
         {
-            return new LiteralExpr(double.Parse(PreviousToken.Content), PreviousToken.StartPos, PreviousToken.EndPos);
+            if (!long.TryParse(PreviousToken.Content, out var num))
+            {
+                if (!double.TryParse(PreviousToken.Content, out var flt)) throw new Exception("Lexer fucked up");
+                return new FloatExpr(flt, PreviousToken.StartPos, PreviousToken.EndPos);
+            }
+            return new IntegerExpr(num, PreviousToken.StartPos, PreviousToken.EndPos);
         }
         if (Match(TokenType.Identifier))
         {
@@ -161,6 +166,11 @@ public class Parser(Lexer lexer)
                 return new FunctionCallExpr(PreviousToken.Content, ParseArguments(), startPos, CurrentToken.EndPos);
             }
             return new IdentifierExpr(CurrentToken.Content, CurrentToken.StartPos, CurrentToken.EndPos);
+        }
+
+        if (Match(TokenType.String))
+        {
+            return new StringExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
         }
         
         if (Match(TokenType.OpenParen))
