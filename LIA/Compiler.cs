@@ -228,7 +228,7 @@ public class Compiler(CodeFile codeFile)
                 else
                 {
                     var localV = functionGen.GetLocalVariable(assignmentStmt.Name.Name)!;
-                    if (localV.Value.Item2 != type)
+                    if (localV.Value.Item2.Get() != type.Get())
                         ThrowTypeConflictError(assignmentStmt.Name, localV.Value.Item1);
                 }
                 if (assignmentStmt.Value != null) segment.StoreLoc(storeLoc);
