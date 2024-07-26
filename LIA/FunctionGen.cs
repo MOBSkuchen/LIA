@@ -181,57 +181,6 @@ public class Segment : ICtxBGenBp
         Emit(OpCodes.Starg, n);
     }
 
-    /*
-     * <branch> is the difference between B*** / C***
-     * aka if a branch should be done or if the value should be pushed onto the stack
-     * aka the difference between:
-     * if (a == b) ...
-     * and
-     * a == b
-     */
-    private OpCode ConvCmpOpCode(Operation cmpOps, bool branch)
-    {
-        if (branch)
-        {
-            switch (cmpOps) {
-                case Operation.Equals: return OpCodes.Beq;
-                case Operation.GreaterThan: return OpCodes.Bgt;
-                case Operation.GreaterThanEquals: return OpCodes.Bge;
-                case Operation.LesserThan: return OpCodes.Blt;
-                case Operation.LesserThanEquals: return OpCodes.Ble;
-                case Operation.IsFalse: return OpCodes.Brfalse;
-                case Operation.IsTrue: return OpCodes.Brtrue;
-            }
-        }
-        else
-        {
-            switch (cmpOps) {
-                case Operation.Equals: return OpCodes.Ceq;
-                case Operation.GreaterThan: return OpCodes.Cgt;
-                case Operation.LesserThan: return OpCodes.Clt;
-                case Operation.Not: return OpCodes.Not;
-            }
-        }
-        throw new Exception("Invalid cmp-op");
-    }
-
-    private OpCode ConvMathOpCode(Operation mathOps)
-    {
-        switch (mathOps)
-        {
-            case Operation.Add: return OpCodes.Add;
-            case Operation.Sub: return OpCodes.Sub;
-            case Operation.Mul: return OpCodes.Mul;
-            case Operation.Div: return OpCodes.Div;
-            case Operation.Rem: return OpCodes.Rem;
-            case Operation.Equals: return OpCodes.Ceq;
-            case Operation.GreaterThan: return OpCodes.Cgt;
-            case Operation.LesserThan: return OpCodes.Clt;
-            case Operation.Not: return OpCodes.Not;
-            default: throw new Exception("Invalid math-op");
-        }
-    }
-
     public void PerformOp(Operation operation)
     {
         _function.DecStackSize();
@@ -260,17 +209,18 @@ public class Segment : ICtxBGenBp
                 break;
             }
             case Operation.Not: Emit(OpCodes.Not); break;
+            case Operation.Xor: Emit(OpCodes.Xor); break;
             default: throw new Exception("Invalid math-op");
         }
     }
 
-    public void PerformOpBranch(Operation cmpOps, string branchLabel)
+    public void BranchIf(bool state, string label)
     {
-        _function.DecStackSize(2);
-        Emit(ConvCmpOpCode(cmpOps, true), branchLabel);
+        if (state) Emit(OpCodes.Brtrue, label);
+        else Emit(OpCodes.Brfalse, label);
     }
 
-    public void PerformOpBranch(Operation cmpOps, Segment branchSegment) => PerformOpBranch(cmpOps, branchSegment._name);
+    public void BranchIf(bool state, Segment segment) => BranchIf(state, segment._name);
 
     public void Branch(string label)
     {
@@ -280,8 +230,6 @@ public class Segment : ICtxBGenBp
     public void Branch(Segment segment) => Branch(segment._name);
     
     public void Loop() => Branch(this);
-    
-    public void Loop(Operation cmpOps) => PerformOpBranch(cmpOps, _name);
     
     public int InitVar(string name, Type type)
     {

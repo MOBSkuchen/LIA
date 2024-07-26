@@ -247,7 +247,7 @@ public class Compiler(CodeFile codeFile)
                 Segment loopSegment = functionGen.SpawnSegment(Cond);
                 Segment afterSegment = functionGen.SpawnSegment(AfterCond);
                 PutExprOnStack(whileLoop.Condition, loopSegment, localsLookup);
-                loopSegment.PerformOpBranch(Operation.IsFalse, afterSegment);
+                loopSegment.BranchIf(false, afterSegment);
                 ParseBody(functionDecl, functionGen, loopSegment, localsLookup, whileLoop.Body);
                 loopSegment.Loop();
                 segment = afterSegment;
@@ -260,7 +260,7 @@ public class Compiler(CodeFile codeFile)
 
                 Segment thenSegment = functionGen.SpawnSegment(Cond);
                 PutExprOnStack(ifStmt.Condition, segment, localsLookup);
-                segment.PerformOpBranch(Operation.IsTrue, thenSegment);
+                segment.BranchIf(true, thenSegment);
                 ParseBody(functionDecl, functionGen, thenSegment, localsLookup, ifStmt.ThenBranch);
                 thenSegment.Branch(afterSegment);
 
@@ -270,7 +270,7 @@ public class Compiler(CodeFile codeFile)
                     {
                         Segment elifSegment = functionGen.SpawnSegment(Cond);
                         PutExprOnStack(elifBranch.Item1, segment, localsLookup);
-                        segment.PerformOpBranch(Operation.IsTrue, elifSegment);
+                        segment.BranchIf(true, elifSegment);
                         ParseBody(functionDecl, functionGen, elifSegment, localsLookup, elifBranch.Item2);
                         elifSegment.Branch(afterSegment);
                     }
