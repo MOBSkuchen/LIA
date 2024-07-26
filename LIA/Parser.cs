@@ -77,7 +77,7 @@ public class Parser(Lexer lexer)
             case TokenType.GreaterThanEquals:
             case TokenType.LessThanEquals:
                 return 4;
-            case TokenType.Equals:
+            case TokenType.DoubleEquals:
                 return 1;
             case TokenType.And:
                 return 5;
@@ -241,10 +241,19 @@ public class Parser(Lexer lexer)
 
     private Stmt ParseStatement()
     {
+        int startPos = CurrentToken.StartPos;
         if (Match(TokenType.Return)) return ParseReturn();
         if (Match(TokenType.While)) return ParseWhile();
         if (Match(TokenType.If)) return ParseIf();
-        if (Match(TokenType.Identifier)) return ParseAssignment();
+        if (Match(TokenType.Identifier) && Match(TokenType.Colon, TokenType.Equals))
+        {
+            _current--;
+            return ParseAssignment();
+        }
+
+        if (Match(TokenType.Identifier, TokenType.Number,
+                TokenType.ExclamationMark, TokenType.Minus, TokenType.String,
+                TokenType.OpenParen)) return new ExprStmt(ParseExpression()!, startPos, CurrentToken.EndPos);
 
         ThrowInvalidTokenError(TokenType.Statement, CurrentToken.Type, "Expected a statement");
         return null;
