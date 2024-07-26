@@ -274,9 +274,6 @@ public class Segment : ICtxBGenBp
             case 3: Emit(OpCodes.Ldloc_3); break;
             default: Emit(OpCodes.Ldloc, n); break;
         }
-        // Regenerative store
-        Dup();
-        StoreLoc(n);
     }
     
     public void Call(FunctionAttributes funcAttrs)
