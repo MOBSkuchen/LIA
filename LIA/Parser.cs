@@ -202,19 +202,21 @@ public class Parser(Lexer lexer)
 
     private IfStmt ParseIf()
     {
-        List<Stmt> elifBranches = new List<Stmt>();
-        Stmt elseBranch = null;
-        int startPos = PreviousToken.StartPos;
+        List<(Expr, BlockStmt)> elifBranches = new List<(Expr, BlockStmt)>();
+        BlockStmt? elseBranch = null;
+        int startPos = PreviousToken!.StartPos;
         var condition = ParseExpression();
         Consume(TokenType.Colon, "Missing body");
         var body = ParseBody();
         while (Match(TokenType.Elif))
         {
-            elifBranches.Add(ParseBody());
+            var elifCondition = ParseExpression();
+            Consume(TokenType.Colon, "Missing body");
+            elifBranches.Add((elifCondition!, ParseBody()));
         }
         if (elifBranches.Count == 0) elifBranches = null;
         if (Match(TokenType.Else)) elseBranch = ParseBody();
-        return new IfStmt(condition, body, elseBranch, elifBranches, startPos, CurrentToken.EndPos);
+        return new IfStmt(condition!, body, elseBranch, elifBranches, startPos, CurrentToken!.EndPos);
     }
 
     private AssignmentStmt ParseAssignment()

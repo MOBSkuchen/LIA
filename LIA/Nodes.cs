@@ -74,17 +74,17 @@
 
     public class IfStmt(
         Expr condition,
-        Stmt thenBranch,
-        Stmt? elseBranch,
-        List<Stmt>? elifBranches,
+        BlockStmt thenBranch,
+        BlockStmt? elseBranch,
+        List<(Expr, BlockStmt)>? elifBranches,
         int startPos,
         int endPos)
         : Stmt(startPos, endPos)
     {
         public Expr Condition { get; } = condition;
-        public Stmt ThenBranch { get; } = thenBranch;
-        public List<Stmt>? ElifBranches { get; } = elifBranches;
-        public Stmt? ElseBranch { get; } = elseBranch;
+        public BlockStmt ThenBranch { get; } = thenBranch;
+        public List<(Expr, BlockStmt)>? ElifBranches { get; } = elifBranches;
+        public BlockStmt? ElseBranch { get; } = elseBranch;
     }
 
     // Block Statement
