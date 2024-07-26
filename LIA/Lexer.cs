@@ -39,7 +39,7 @@
                 {
                     _counter--;
                     break;
-                };
+                }
                 isDot = CurrentChar == '.';
             }
             AddToken(TokenType.Number, _code.Substring(startPos, _counter - startPos), startPos, _counter);
@@ -112,24 +112,41 @@
                     case ',': AddSingleToken(TokenType.Comma); break;
                     case '|': AddSingleToken(TokenType.Or); break;
                     case '!': {
-                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.NotEquals);
+                        if (_code[_counter] == '=')
+                        {
+                            AddDoubleToken(TokenType.NotEquals);
+                            _counter++;
+                        }
                         else AddSingleToken(TokenType.ExclamationMark);
                         break;
                     }
                     case '=':
                     {
-                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.DoubleEquals);
+                        
+                        if (_code[_counter] == '=')
+                        {
+                            AddDoubleToken(TokenType.DoubleEquals);
+                            _counter++;
+                        }
                         else AddSingleToken(TokenType.Equals);
                         break;
                     }
                     case '&': AddSingleToken(TokenType.And); break;
                     case '<': {
-                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.LessThanEquals);
+                        if (_code[_counter] == '=')
+                        {
+                            AddDoubleToken(TokenType.LessThanEquals);
+                            _counter++;
+                        }
                         else AddSingleToken(TokenType.LessThan);
                         break;
                     }
                     case '>': {
-                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.GreaterThanEquals);
+                        if (_code[_counter] == '=')
+                        {
+                            AddDoubleToken(TokenType.GreaterThanEquals);
+                            _counter++;
+                        }
                         else AddSingleToken(TokenType.GreaterThan);
                         break;
                     }
