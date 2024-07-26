@@ -68,21 +68,21 @@ public class Parser(Lexer lexer)
         {
             case TokenType.Plus:
             case TokenType.Minus:
-                return 1;
+                return 2;
             case TokenType.Star:
             case TokenType.Slash:
-                return 2;
+                return 3;
             case TokenType.GreaterThan:
             case TokenType.LessThan:
             case TokenType.GreaterThanEquals:
             case TokenType.LessThanEquals:
-                return 3;
-            case TokenType.Equals:
                 return 4;
+            case TokenType.Equals:
+                return 1;
             case TokenType.And:
                 return 5;
             case TokenType.Or:
-                return 6;
+                return 7;
             default:
                 return 0;  // Lowest precedence
         }
@@ -215,7 +215,11 @@ public class Parser(Lexer lexer)
             elifBranches.Add((elifCondition!, ParseBody()));
         }
         if (elifBranches.Count == 0) elifBranches = null;
-        if (Match(TokenType.Else)) elseBranch = ParseBody();
+        if (Match(TokenType.Else))
+        {
+            Consume(TokenType.Colon, "Missing body");
+            elseBranch = ParseBody();
+        }
         return new IfStmt(condition!, body, elseBranch, elifBranches, startPos, CurrentToken!.EndPos);
     }
 
