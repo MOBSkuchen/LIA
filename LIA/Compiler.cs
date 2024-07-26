@@ -122,7 +122,7 @@ public class Compiler(CodeFile codeFile)
             case TokenType.Slash: return Operation.Div;
             case TokenType.Star: return Operation.Mul;
             case TokenType.Minus: return Operation.Sub;
-            case TokenType.Equals: return Operation.Equals;
+            case TokenType.DoubleEquals: return Operation.Equals;
             case TokenType.GreaterThan: return Operation.GreaterThan;
             case TokenType.GreaterThanEquals: return Operation.GreaterThanEquals;
             case TokenType.LessThan: return Operation.LesserThan;

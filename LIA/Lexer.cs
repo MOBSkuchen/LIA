@@ -92,29 +92,7 @@
             Advance(); // Skip the closing quote
             AddToken(TokenType.String, _code.Substring(startPos, _counter - startPos), startPos, _counter);
         }
-
-        public void LexEquals()
-        {
-            while (_counter < _code.Length)
-            {
-                char c = _code[_counter++];
-                switch (c)
-                {
-                    case '!': AddDoubleToken(TokenType.NotEquals); return;
-                    case '>': AddDoubleToken(TokenType.GreaterThanEquals); return;
-                    case '<': AddDoubleToken(TokenType.LessThanEquals); return;
-                    default:
-                    {
-                        _counter--;
-                        AddSingleToken(TokenType.Equals);
-                        return;
-                    }
-                }
-            }
-
-            throw new Exception("Invalid");
-        }
-
+        
         public void Lex()
         {
             while (_counter < _code.Length)
@@ -133,11 +111,28 @@
                     case '.': AddSingleToken(TokenType.Dot); break;
                     case ',': AddSingleToken(TokenType.Comma); break;
                     case '|': AddSingleToken(TokenType.Or); break;
-                    case '!': AddSingleToken(TokenType.ExclamationMark); break;
-                    case '=': LexEquals(); break;
+                    case '!': {
+                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.NotEquals);
+                        else AddSingleToken(TokenType.ExclamationMark);
+                        break;
+                    }
+                    case '=':
+                    {
+                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.DoubleEquals);
+                        else AddSingleToken(TokenType.Equals);
+                        break;
+                    }
                     case '&': AddSingleToken(TokenType.And); break;
-                    case '<': AddSingleToken(TokenType.LessThan); break;
-                    case '>': AddSingleToken(TokenType.GreaterThan); break;
+                    case '<': {
+                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.LessThanEquals);
+                        else AddSingleToken(TokenType.LessThan);
+                        break;
+                    }
+                    case '>': {
+                        if (_code[_counter + 1] == '=') AddDoubleToken(TokenType.GreaterThanEquals);
+                        else AddSingleToken(TokenType.GreaterThan);
+                        break;
+                    }
                     case '"': LexString(); break;
                     case '#': LexComment(); break;
                     default:
@@ -185,6 +180,7 @@
         GreaterThanEquals,
         LessThanEquals,
         NotEquals,
+        DoubleEquals,
         Dot,
         And,
         Or,
