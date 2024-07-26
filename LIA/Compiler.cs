@@ -282,6 +282,13 @@ public class Compiler(CodeFile codeFile)
                 {
                     ParseBody(functionDecl, functionGen, segment, localsLookup, ifStmt.ElseBranch);
                 }
+            } else if (statementType == typeof(ExprStmt))
+            {
+                ExprStmt exprStmt = (ExprStmt)statement;
+                var useless = exprStmt.Expression.GetType() != typeof(FunctionCallExpr);
+                if (useless) Errors.CodeWarning(GenCodeLocForNode(exprStmt), WarningCodes.UselessCode, "This code is useless, it does not do anything");
+                PutExprOnStack(exprStmt.Expression, segment, localsLookup);
+                segment.Pop();
             }
         }
     }
