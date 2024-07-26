@@ -235,7 +235,33 @@ public class Segment : ICtxBGenBp
     public void PerformOp(Operation operation)
     {
         _function.DecStackSize();
-        Emit(ConvMathOpCode(operation));
+        switch (operation)
+        {
+            case Operation.Add: Emit(OpCodes.Add); break;
+            case Operation.Sub: Emit(OpCodes.Sub); break;
+            case Operation.Mul: Emit(OpCodes.Mul); break;
+            case Operation.Div: Emit(OpCodes.Div); break;
+            case Operation.Rem: Emit(OpCodes.Rem); break;
+            case Operation.Equals: Emit(OpCodes.Ceq); break;
+            case Operation.GreaterThan: Emit(OpCodes.Cgt); break;
+            case Operation.GreaterThanEquals:
+            {
+                Emit(OpCodes.Clt);
+                LoadInt(0, false);
+                Emit(OpCodes.Ceq);
+                break;
+            }
+            case Operation.LesserThan: Emit(OpCodes.Clt); break;
+            case Operation.LesserThanEquals:
+            {
+                Emit(OpCodes.Cgt);
+                LoadInt(0, false);
+                Emit(OpCodes.Ceq);
+                break;
+            }
+            case Operation.Not: Emit(OpCodes.Not); break;
+            default: throw new Exception("Invalid math-op");
+        }
     }
 
     public void PerformOpBranch(Operation cmpOps, string branchLabel)
