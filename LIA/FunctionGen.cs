@@ -224,6 +224,10 @@ public class Segment : ICtxBGenBp
             case Operation.Mul: return OpCodes.Mul;
             case Operation.Div: return OpCodes.Div;
             case Operation.Rem: return OpCodes.Rem;
+            case Operation.Equals: return OpCodes.Ceq;
+            case Operation.GreaterThan: return OpCodes.Cgt;
+            case Operation.LesserThan: return OpCodes.Clt;
+            case Operation.Not: return OpCodes.Not;
             default: throw new Exception("Invalid math-op");
         }
     }
@@ -300,4 +304,6 @@ public class Segment : ICtxBGenBp
         
         AppendRaw(string.Join(" ", stack));
     }
+
+    public void Pop() => Emit(OpCodes.Pop);
 }
