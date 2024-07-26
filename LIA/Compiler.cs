@@ -197,11 +197,12 @@ public class Compiler(CodeFile codeFile)
         throw new Exception("Parser fucked up or I did, idk");
     }
 
-    private void ParseBody(FunctionDecl functionDecl, FunctionGen functionGen, Segment segment, LocalsLookup localsLookup)
+    private void ParseBody(FunctionDecl functionDecl, FunctionGen functionGen, Segment segment, LocalsLookup localsLookup, BlockStmt? body = null)
     {
-        for (var index = 0; index < functionDecl.Body.Statements.Count; index++)
+        if (body == null) body = functionDecl.Body;
+        for (var index = 0; index < body.Statements.Count; index++)
         {
-            var statement = functionDecl.Body.Statements[index];
+            var statement = body.Statements[index];
             var statementType = statement.GetType();
 
             if (statementType == typeof(AssignmentStmt))
@@ -225,13 +226,25 @@ public class Compiler(CodeFile codeFile)
                         ThrowTypeConflictError(assignmentStmt.Name, localV.Value.Item1);
                 }
                 if (assignmentStmt.Value != null) segment.StoreLoc(storeLoc);
-            } else if (statementType == typeof(ReturnStmt))
+            } 
+            else if (statementType == typeof(ReturnStmt))
             {
                 ReturnStmt returnStmt = (ReturnStmt)statement;
                 PutExprOnStack(returnStmt.Value, segment, localsLookup);
                 var type = InferExprType(returnStmt.Value, functionGen, localsLookup);
                 if (ConvertType(functionDecl.ReturnType).Get() != type.Get()) ThrowTypeConflictFunctionError(functionDecl, returnStmt.Value);
                 segment.Ret();
+            }
+            else if (statementType == typeof(WhileLoop))
+            {
+                WhileLoop whileLoop = (WhileLoop)statement;
+                Segment loopSegment = functionGen.SpawnSegment("Cond");
+                Segment afterSegment = functionGen.SpawnSegment("AfterCond");
+                PutExprOnStack(whileLoop.Condition, loopSegment, localsLookup);
+                loopSegment.PerformOpBranch(Operation.IsFalse, afterSegment);
+                ParseBody(functionDecl, functionGen, loopSegment, localsLookup, whileLoop.Body);
+                loopSegment.Loop();
+                segment = afterSegment;
             }
         }
     }
