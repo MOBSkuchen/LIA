@@ -1,4 +1,6 @@
-﻿namespace LIA;
+﻿using System.Reflection.Emit;
+
+namespace LIA;
 
 public class LocalsLookup
 {
@@ -19,6 +21,10 @@ public class Compiler(CodeFile codeFile)
 {
     private CodeFile _codeFile = codeFile;
 
+    private int _miscInt = 0;
+    private string Cond => $"Cond_{_miscInt++}";
+    private string AfterCond => $"AfterCond_{_miscInt++}";
+    
     private List<NameSpace> _nameSpaces = new List<NameSpace>() {new NameSpace("Program")};
     private Dictionary<string, string> _declaredTypes = new Dictionary<string, string>()
     {
@@ -238,13 +244,44 @@ public class Compiler(CodeFile codeFile)
             else if (statementType == typeof(WhileLoop))
             {
                 WhileLoop whileLoop = (WhileLoop)statement;
-                Segment loopSegment = functionGen.SpawnSegment("Cond");
-                Segment afterSegment = functionGen.SpawnSegment("AfterCond");
+                Segment loopSegment = functionGen.SpawnSegment(Cond);
+                Segment afterSegment = functionGen.SpawnSegment(AfterCond);
                 PutExprOnStack(whileLoop.Condition, loopSegment, localsLookup);
                 loopSegment.PerformOpBranch(Operation.IsFalse, afterSegment);
                 ParseBody(functionDecl, functionGen, loopSegment, localsLookup, whileLoop.Body);
                 loopSegment.Loop();
                 segment = afterSegment;
+            }
+            else if (statementType == typeof(IfStmt))
+            {
+                IfStmt ifStmt = (IfStmt)statement;
+
+                Segment afterSegment = functionGen.SpawnSegment(AfterCond);
+
+                Segment thenSegment = functionGen.SpawnSegment(Cond);
+                PutExprOnStack(ifStmt.Condition, segment, localsLookup);
+                segment.PerformOpBranch(Operation.IsTrue, thenSegment);
+                ParseBody(functionDecl, functionGen, thenSegment, localsLookup, ifStmt.ThenBranch);
+                thenSegment.Branch(afterSegment);
+
+                if (ifStmt.ElifBranches != null)
+                {
+                    foreach (var elifBranch in ifStmt.ElifBranches)
+                    {
+                        Segment elifSegment = functionGen.SpawnSegment(Cond);
+                        PutExprOnStack(elifBranch.Item1, segment, localsLookup);
+                        segment.PerformOpBranch(Operation.IsTrue, elifSegment);
+                        ParseBody(functionDecl, functionGen, elifSegment, localsLookup, elifBranch.Item2);
+                        elifSegment.Branch(afterSegment);
+                    }
+                }
+
+                segment = afterSegment;
+                
+                if (ifStmt.ElseBranch != null)
+                {
+                    ParseBody(functionDecl, functionGen, segment, localsLookup, ifStmt.ElseBranch);
+                }
             }
         }
     }
