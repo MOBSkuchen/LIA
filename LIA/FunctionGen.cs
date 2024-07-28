@@ -5,16 +5,19 @@ public class FunctionGen : ICtxBGenBp
 {
     private string _head;
     public List<string> Instructions { get; set; } = new List<string>();
-    public List<(string, Type)> LocalVariables = new List<(string, Type)>();
+    public List<(string, TypeEm)> LocalVariables = new List<(string, TypeEm)>();
     private List<Segment> _segments = new List<Segment>();
 
     // Track stack size to dynamically set 'maxstack'
     private int _stacksize = 0;
     private int _maxstacksize = 0;
+
+    public ClassGen Class;
     
-    public FunctionGen(FunctionAttributes attrs)
+    public FunctionGen(FunctionAttributes attrs, ClassGen classGen)
     {
         _head = attrs.Generate();
+        Class = classGen;
     }
 
     public Segment SpawnSegment(string name)
@@ -24,7 +27,7 @@ public class FunctionGen : ICtxBGenBp
         return segment;
     }
 
-    public (string, Type)? GetLocalVariable(string name) =>
+    public (string, TypeEm)? GetLocalVariable(string name) =>
         LocalVariables.Find(x => x.Item1 == name);
 
     public Segment SpawnStartSegment() => SpawnSegment("Start");
@@ -76,13 +79,13 @@ public class FunctionGen : ICtxBGenBp
 public class Segment : ICtxBGenBp
 {
     private string _name;
-    private FunctionGen _function;
+    public FunctionGen Function;
     public List<string> Instructions { get; set; } = new List<string>();
 
     public Segment(FunctionGen function, string name)
     {
         _name = name;
-        _function = function;
+        Function = function;
     }
     
     private void AppendRaw(string operation) => Instructions.Add(operation);
@@ -113,7 +116,7 @@ public class Segment : ICtxBGenBp
 
     public void LoadArg(int n)
     {
-        _function.IncStackSize();
+        Function.IncStackSize();
         switch (n)
         {
             case 0: Emit(OpCodes.Ldarg_0); break;
@@ -126,13 +129,13 @@ public class Segment : ICtxBGenBp
 
     public void LoadInt(long num, bool longform)
     {
-        _function.IncStackSize();
+        Function.IncStackSize();
         if (longform) Emit(OpCodes.Ldc_I8, num);
         else Emit(OpCodes.Ldc_I4, num);
     }
 
     public void Discard() {
-        _function.DecStackSize();
+        Function.DecStackSize();
         Emit(OpCodes.Pop);
     }
 
@@ -144,7 +147,7 @@ public class Segment : ICtxBGenBp
 
     public void LoadFloat(double num, bool longform)
     {
-        _function.IncStackSize();
+        Function.IncStackSize();
         if (longform) Emit(OpCodes.Ldc_R8, num);
         else Emit(OpCodes.Ldc_R4, num);
     }
@@ -152,13 +155,13 @@ public class Segment : ICtxBGenBp
     public void Ret() => Emit(OpCodes.Ret);
     public void Dup()
     {
-        _function.IncStackSize();
+        Function.IncStackSize();
         Emit(OpCodes.Dup);
     }
 
     public void StoreLoc(int n)
     {
-        _function.DecStackSize();
+        Function.DecStackSize();
         switch (n)
         {
             case 0: Emit(OpCodes.Stloc_0); break;
@@ -171,19 +174,19 @@ public class Segment : ICtxBGenBp
 
     public void LoadString(string str)
     {
-        _function.IncStackSize();
+        Function.IncStackSize();
         Emit(OpCodes.Ldstr, $"{Utils.Quote()}{str}{Utils.Quote()}");
     }
 
     public void StoreArg(int n)
     {
-        _function.DecStackSize();
+        Function.DecStackSize();
         Emit(OpCodes.Starg, n);
     }
 
     public void PerformOp(Operation operation)
     {
-        _function.DecStackSize();
+        Function.DecStackSize();
         switch (operation)
         {
             case Operation.Add: Emit(OpCodes.Add); break;
@@ -231,15 +234,15 @@ public class Segment : ICtxBGenBp
     
     public void Loop() => Branch(this);
     
-    public int InitVar(string name, Type type)
+    public int InitVar(string name, TypeEm typeEm)
     {
-        _function.LocalVariables.Add((name, type));
-        return _function.LocalVariables.Count - 1;
+        Function.LocalVariables.Add((name, typeEm));
+        return Function.LocalVariables.Count - 1;
     }
 
     public void LoadLoc(int n)
     {
-        _function.IncStackSize();
+        Function.IncStackSize();
         switch (n)
         {
             case 0: Emit(OpCodes.Ldloc_0); break;
@@ -256,7 +259,7 @@ public class Segment : ICtxBGenBp
         List<string> args = new List<string>();
         
         stack.Add("call");
-        stack.Add(funcAttrs.Type.Get());
+        stack.Add(funcAttrs.TypeEm.Get());
         if (funcAttrs.Library != null)
         {
             stack.Add($"[{funcAttrs.Library}]");

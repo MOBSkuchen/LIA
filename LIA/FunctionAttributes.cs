@@ -1,7 +1,7 @@
 ﻿namespace LIA;
 
 public struct FunctionAttributes(string ns, string @class, string name, 
-    bool isStatic, bool isPublic, Type type, List<(string, Type)>? args, string? library = null)
+    bool isStatic, bool isPublic, TypeEm typeEm, List<(string, TypeEm)>? args, string? library = null)
 {
     public string Namespace = ns;
     public string Class = @class;
@@ -9,8 +9,8 @@ public struct FunctionAttributes(string ns, string @class, string name,
     public bool IsStatic = isStatic;
     public bool IsPublic = isPublic;
     public string Name = name;
-    public Type Type = type;
-    public List<(string, Type)>? Arguments = args;
+    public TypeEm TypeEm = typeEm;
+    public List<(string, TypeEm)>? Arguments = args;
 
     public string Generate()
     {
@@ -20,7 +20,7 @@ public struct FunctionAttributes(string ns, string @class, string name,
         else stack.Add("private");
         if (IsStatic) stack.Add("static");
         
-        stack.Add(Type.Get());
+        stack.Add(TypeEm.Get());
         stack.Add(Name);
         stack.Add("(");
 

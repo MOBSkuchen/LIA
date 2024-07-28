@@ -322,8 +322,9 @@ public class Parser(Lexer lexer)
             {
                 methods.Add(ParseFunction());
             }
-
-            if (Match(TokenType.Semicolon)) return new ClassDecl(name, isPublic, methods, startPos, PreviousToken.EndPos);
+            else if (Match(TokenType.Semicolon))
+                return new ClassDecl(name, isPublic, methods, startPos, PreviousToken.EndPos);
+            else break;
         }
         ThrowInvalidTokenError(TokenType.ClassLevel, CurrentToken.Type, "For example a function definition or terminating semicolon");
         return null;

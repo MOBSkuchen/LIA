@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LIA", "LIA\LIA.csproj", "{B754CBAE-F69B-42E6-8D99-AAC2F0D12680}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test", "test\test.csproj", "{B3D40CB4-AB88-4389-9F14-9E17412CA188}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Liac", "Liac\Liac.csproj", "{B3D40CB4-AB88-4389-9F14-9E17412CA188}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

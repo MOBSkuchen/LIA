@@ -24,20 +24,17 @@ public class Compiler(CodeFile codeFile)
     private int _miscInt = 0;
     private string Cond => $"Cond_{_miscInt++}";
     private string AfterCond => $"AfterCond_{_miscInt++}";
-    
-    private List<NameSpace> _nameSpaces = new List<NameSpace>() {new NameSpace("Program")};
-    private Dictionary<string, string> _declaredTypes = new Dictionary<string, string>()
+    private Dictionary<string, ClassAttributes> _globalDeclarations = new Dictionary<string, ClassAttributes>()
     {
-        {"i32", "int32"}, 
-        {"f32", "float32"}, 
-        {"i64", "int64"}, 
-        {"f64", "float64"}, 
-        {"void", "void"}, 
-        {"none", "void"}, 
-        {"string", "string"}, 
+        {"i32", new ClassAttributes("Sys", true, "int32", true)},
+        {"i64", new ClassAttributes("Sys", true, "int64", true)},
+        {"f32", new ClassAttributes("Sys", true, "float32", true)},
+        {"f64", new ClassAttributes("Sys", true, "float64", true)},
+        {"string", new ClassAttributes("Sys", true, "string", true)},
+        {"void", new ClassAttributes("Sys", true, "void", true)},
     };
-
-    private Dictionary<string, FunctionAttributes> _callables = new Dictionary<string, FunctionAttributes>();
+    private List<NameSpace> _nameSpaces = new List<NameSpace>() {new NameSpace("Program")};
+    private NameSpace CurrentNameSpace => _nameSpaces[^1];
     
     private bool _mainDefined = false;
 
@@ -57,7 +54,7 @@ public class Compiler(CodeFile codeFile)
         $"The function '{functionCall.Name.Name}' was not found or could not be acessed in this context!",
         ErrorCodes.UnknownFunction);
     
-    private Type ConvertType(IdentifierExpr identifierExpr)
+    private TypeEm ConvertType(IdentifierExpr identifierExpr)
     {
         var rawConvert = RawConvertType(identifierExpr.Name);
         if (rawConvert != null) return rawConvert;
@@ -65,7 +62,7 @@ public class Compiler(CodeFile codeFile)
         throw new Exception("Failed to Exit");
     }
 
-    private Type? RawConvertType(string name)
+    private TypeEm? RawConvertType(string name)
     {
         bool isRef = false;
         bool goesOut = false;
@@ -79,14 +76,15 @@ public class Compiler(CodeFile codeFile)
             goesOut = true;
             name = name.Substring(1, name.Length - 1);
         }
-
-        if (_declaredTypes.TryGetValue(name, out var type)) return new Type(type, isRef, goesOut);
+        
+        if (_globalDeclarations.TryGetValue(name, out var type)) return new TypeEm(new RealType(type), isRef, goesOut);
+        if (CurrentNameSpace.Classes.TryGetValue(name, out var type2)) return new TypeEm(new RealType(type2.Item1), isRef, goesOut);
         return null;
     }
 
-    private List<(string, Type)> ConvertParameters(List<ParameterExpr> parameters)
+    private List<(string, TypeEm)> ConvertParameters(List<ParameterExpr> parameters)
     {
-        List<(string, Type)> newParams = new List<(string, Type)>();
+        List<(string, TypeEm)> newParams = new List<(string, TypeEm)>();
         foreach (var param in parameters)
         {
             newParams.Add(((param.Name.Name), ConvertType(param.Type)));
@@ -100,13 +98,7 @@ public class Compiler(CodeFile codeFile)
 
     private void ParseClass(ClassDecl classDecl)
     {
-        var nameSpace = _nameSpaces[^1];
-        var classGen = nameSpace.SpawnClass(classDecl.Public, classDecl.Name);
-
-        foreach (var func in classDecl.Methods)
-        {
-            _callables.Add(func.Name.Name, new FunctionAttributes(_nameSpaces[^1].Name, classDecl.Name, func.Name.Name, true, func.Public, ConvertType(func.ReturnType), ConvertParameters(func.Parameters)));
-        }
+        var classGen = CurrentNameSpace.SpawnClass(classDecl.Public, classDecl.Name);
         
         foreach (var func in classDecl.Methods)
         {
@@ -141,12 +133,12 @@ public class Compiler(CodeFile codeFile)
             segment.LoadString(((StringExpr)expr).Value);
         else if (expr.GetType() == typeof(FunctionCallExpr))
         {
-            if (!_callables.ContainsKey(((FunctionCallExpr)expr).Name.Name)) ThrowUnknownFunctionError((FunctionCallExpr)expr);
+            if (!segment.Function.Class.Functions.ContainsKey(((FunctionCallExpr)expr).Name.Name)) ThrowUnknownFunctionError((FunctionCallExpr)expr);
             foreach (var argument in ((FunctionCallExpr)expr).Arguments!)
             {
                 PutExprOnStack(argument, segment, localsLookup);
             }
-            segment.Call(_callables[((FunctionCallExpr)expr).Name.Name]);
+            segment.Call(segment.Function.Class.Functions[((FunctionCallExpr)expr).Name.Name].Item1);
         }
         else if (expr.GetType() == typeof(BinaryExpr))
         {
@@ -173,7 +165,7 @@ public class Compiler(CodeFile codeFile)
         else throw new Exception("Parser fucked up or I did, idk");
     }
     
-    private Type InferExprType(Expr expr, FunctionGen functionGen, LocalsLookup localsLookup)
+    private TypeEm InferExprType(Expr expr, FunctionGen functionGen, LocalsLookup localsLookup)
     {
         if (expr.GetType() == typeof(FloatExpr))
             return (((FloatExpr)expr).Value > float.MaxValue
@@ -190,8 +182,8 @@ public class Compiler(CodeFile codeFile)
         if (expr.GetType() == typeof(BinaryExpr)) return InferExprType(((BinaryExpr)expr).Left, functionGen, localsLookup);
         if (expr.GetType() == typeof(FunctionCallExpr))
         {
-            if (_callables.ContainsKey(((FunctionCallExpr)expr).Name.Name))
-                return _callables[((FunctionCallExpr)expr).Name.Name].Type;
+            if (functionGen.Class.Functions.ContainsKey(((FunctionCallExpr)expr).Name.Name))
+                return functionGen.Class.Functions[((FunctionCallExpr)expr).Name.Name].Item1.TypeEm;
             ThrowUnknownFunctionError((FunctionCallExpr)expr);
         }
         if (expr.GetType() == typeof(IdentifierExpr))

@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using Pastel;
 
 namespace LIA;
 
