@@ -315,7 +315,7 @@ public class Compiler(CodeFile codeFile)
             else if (topLevelStatement.GetType() == typeof(ClassDecl)) ParseClass((ClassDecl) topLevelStatement);
         }
         
-        if (!_mainDefined) Errors.Warning(WarningCodes.MainNotDefined, 
+        if (!_mainDefined && GlobalContext.CompilationOptions.DisableWarningMainNotDefined) Errors.Warning(WarningCodes.MainNotDefined, 
             "Function 'main' (public static, public class) is not defined! This Program will not run!");
     }
 

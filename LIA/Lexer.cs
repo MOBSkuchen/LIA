@@ -52,7 +52,8 @@
         {
             var lowerComment = comment.ToLower();
             if (lowerComment.StartsWith(":devdebug>")) GlobalContext.DevDebug = BoolParseComment(lowerComment, 8);
-            if (lowerComment.StartsWith(":trimunreachablecode>")) GlobalContext.CompilationOptions.TrimUnreachableCode = BoolParseComment(lowerComment, 19);
+            else if (lowerComment.StartsWith(":trimunreachablecode>")) GlobalContext.CompilationOptions.TrimUnreachableCode = BoolParseComment(lowerComment, 19);
+            else if (lowerComment.StartsWith(":warnmainnotdefined>")) GlobalContext.CompilationOptions.TrimUnreachableCode = BoolParseComment(lowerComment, 18);
         }
 
         private void LexComment()
