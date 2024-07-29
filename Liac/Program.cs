@@ -107,7 +107,7 @@ public class Liac
 
     static int CompileFile(Options.CompileOptions options)
     {
-        Errors.DevDebug = options.DevDebug;
+        GlobalContext.DevDebug = options.DevDebug;
         
         if (!File.Exists(options.InputFile)) Errors.Error(ErrorCodes.UnaccessibleFile, $"Input file '{options.InputFile}' does not exist");
         

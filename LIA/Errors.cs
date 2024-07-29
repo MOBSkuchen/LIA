@@ -1,10 +1,7 @@
-﻿using System.Drawing;
-
-namespace LIA;
+﻿namespace LIA;
 
 public static class Errors
 {
-    public static bool DevDebug = false;
     public static void ThrowCodeError(CodeLocation codeLocation, string message, ErrorCodes errNum)
     {
         ViewCodeLocation(codeLocation, errNum == ErrorCodes.EndOfFile);
@@ -65,7 +62,7 @@ public static class Errors
 
     public static void Exit(ErrorCodes errorCode)
     {
-        if ((errorCode != ErrorCodes.None) && DevDebug) throw new Exception($"Exit with error {errorCode}! (Dev debug is enabled)");
+        if ((errorCode != ErrorCodes.None) && GlobalContext.DevDebug) throw new Exception($"Exit with error {errorCode}! (Dev debug is enabled)");
         int exitCode = (int)errorCode;
         Console.WriteLine($"Exited with code {ConsoleLib.As(exitCode.ToString(), ConsoleLib.TextBold, errorCode == ErrorCodes.None ? ConsoleLib.FgCyan : ConsoleLib.FgRed)}");
         Environment.Exit(exitCode);
