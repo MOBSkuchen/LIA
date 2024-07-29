@@ -102,6 +102,9 @@ public class Liac
                 break;
         }
         processArguments.Add($"/OUTPUT={outputFile}");
+        options.BuildType = options.BuildType!.ToLower();
+        if (options.BuildType!.ToLower() == "exe") processArguments.Add("/EXE");
+        else if (options.BuildType!.ToLower() == "dll") processArguments.Add("/DLL");
         return processArguments;
     }
 
@@ -114,6 +117,8 @@ public class Liac
         var codeFile = new CodeFile(options.InputFile!);
         var lexer = new Lexer(codeFile);
         lexer.Lex();
+
+        GlobalContext.CompilationOptions.DisableWarningMainNotDefined = options.BuildType!.ToLower() != "exe";
         
         if (options.EmitType!.Contains("tokens"))
         {
@@ -143,7 +148,7 @@ public class Liac
 
             Console.WriteLine($"Done. IL-Compile finished with exit code {proc.ExitCode}");
             if (proc.ExitCode != 0) Errors.Error(ErrorCodes.IlCompFailed, "Failed to compile IL, did you define an entry point? (main)");
-            if (options.Test)
+            if (options.Test && options.BuildType!.ToLower() == "exe")
             {
                 Console.WriteLine($"Testing build ({outputFile})");
                 var procExe = Process.Start(outputFile);
