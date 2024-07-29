@@ -142,7 +142,7 @@ public class Liac
             proc.WaitForExit();
 
             Console.WriteLine($"Done. IL-Compile finished with exit code {proc.ExitCode}");
-
+            if (proc.ExitCode != 0) Errors.Error(ErrorCodes.IlCompFailed, "Failed to compile IL, did you define an entry point? (main)");
             if (options.Test)
             {
                 Console.WriteLine($"Testing build ({outputFile})");

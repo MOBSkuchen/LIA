@@ -76,6 +76,7 @@ public enum ErrorCodes
     
     UnknownArgument,
     UnaccessibleFile,
+    IlCompFailed,
     
     Unintelligeble,
     InvalidToken,
