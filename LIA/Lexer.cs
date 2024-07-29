@@ -53,7 +53,7 @@
             var lowerComment = comment.ToLower();
             if (lowerComment.StartsWith(":devdebug>")) GlobalContext.DevDebug = BoolParseComment(lowerComment, 8);
             else if (lowerComment.StartsWith(":trimunreachablecode>")) GlobalContext.CompilationOptions.TrimUnreachableCode = BoolParseComment(lowerComment, 19);
-            else if (lowerComment.StartsWith(":warnmainnotdefined>")) GlobalContext.CompilationOptions.TrimUnreachableCode = BoolParseComment(lowerComment, 18);
+            else if (lowerComment.StartsWith(":warnmainnotdefined>")) GlobalContext.CompilationOptions.DisableWarningMainNotDefined = !BoolParseComment(lowerComment, 18);
         }
 
         private void LexComment()
@@ -71,7 +71,8 @@
                 }
                 total += c;
             }
-            if (total.StartsWith(":")) InterpretComment(total);
+
+            try { if (total.StartsWith(":")) InterpretComment(total); } catch (Exception) {return;}
         }
 
         private void LexIdentifier()
