@@ -91,7 +91,7 @@ public class Parser(Lexer lexer)
     private Expr? ParseExpression(int precedence = 0)
     {
         Expr? left = ParseUnary();
-        if (left == null) return null;
+        if (left == null) ThrowSyntaxError(PreviousToken.StartPos, PreviousToken.EndPos, $"Expected an expression after this but got nothing");
 
         while (true)
         {
@@ -225,7 +225,7 @@ public class Parser(Lexer lexer)
 
     private AssignmentStmt ParseAssignment()
     {
-        IdentifierExpr name = new IdentifierExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
+        IdentifierExpr name = new IdentifierExpr(PreviousToken!.Content, PreviousToken.StartPos, PreviousToken.EndPos);
         IdentifierExpr? type = null;
         if (Match(TokenType.Colon))
         {
@@ -234,12 +234,17 @@ public class Parser(Lexer lexer)
             type = new IdentifierExpr(token.Content, token.StartPos, token.EndPos);
         }
 
-        if (Match(TokenType.Equals)) return new AssignmentStmt(name, ParseExpression(), type, name.StartPos, CurrentToken.EndPos);
+        if (Match(TokenType.Equals))
+        {
+            var expr = ParseExpression();
+            return new AssignmentStmt(name, expr, type, name.StartPos, CurrentToken!.EndPos);
+        } 
         if (type == null) ThrowSyntaxError(name.StartPos, name.EndPos, $"Expected a value or type annotation for the declared variable '{name.Name}'");
-        return new AssignmentStmt(name, null, type, name.StartPos, CurrentToken.EndPos);
+        else return new AssignmentStmt(name, null, type, name.StartPos, CurrentToken!.EndPos);
+        return null;
     }
 
-    private Stmt ParseStatement()
+    private Stmt? ParseStatement()
     {
         int startPos = CurrentToken.StartPos;
         if (Match(TokenType.Return)) return ParseReturn();
@@ -250,6 +255,8 @@ public class Parser(Lexer lexer)
             _current--;
             return ParseAssignment();
         }
+
+        if (Match(TokenType.Pause)) return null;
 
         if (Match(TokenType.Identifier, TokenType.Number,
                 TokenType.ExclamationMark, TokenType.Minus, TokenType.String,
@@ -262,11 +269,13 @@ public class Parser(Lexer lexer)
     private BlockStmt ParseBody()
     {
         List<Stmt> statements = new List<Stmt>();
-        int startPos = CurrentToken.StartPos;
+        int startPos = CurrentToken!.StartPos;
         while (!IsAtEnd())
         {
-            statements.Add(ParseStatement());
-            if (Match(TokenType.Semicolon)) return new BlockStmt(statements, startPos, PreviousToken.EndPos);
+            var stmt = ParseStatement();
+            if (stmt == null) continue;
+            statements.Add(stmt);
+            if (Match(TokenType.Semicolon)) return new BlockStmt(statements, startPos, PreviousToken!.EndPos);
         }
 
         ThrowInvalidTokenError(TokenType.Semicolon, CurrentToken.Type, "Expected a closing semicolon");
@@ -326,7 +335,7 @@ public class Parser(Lexer lexer)
                 return new ClassDecl(name, isPublic, methods, startPos, PreviousToken.EndPos);
             else break;
         }
-        ThrowInvalidTokenError(TokenType.ClassLevel, CurrentToken.Type, "For example a function definition or terminating semicolon");
+        ThrowInvalidTokenError(TokenType.ClassLevel, CurrentToken!.Type, "For example a function definition or terminating semicolon");
         return null;
     }
 
@@ -338,13 +347,13 @@ public class Parser(Lexer lexer)
             if (Match(TokenType.Namespace))
             {
                 var curTok = Consume(TokenType.Identifier, "Namespace must have a name");
-                statements.Add(new NamespaceDecl(curTok.Content, PreviousToken.StartPos, CurrentToken.EndPos));
+                statements.Add(new NamespaceDecl(curTok.Content, PreviousToken!.StartPos, CurrentToken!.EndPos));
             }
             else if (Match(TokenType.Class))
             {
                 statements.Add(ParseClass());
             }
-            else ThrowInvalidTokenError(TokenType.TopLevel, CurrentToken.Type, "For example a namespace declaration or class definition");
+            else ThrowInvalidTokenError(TokenType.TopLevel, CurrentToken!.Type, "For example a namespace declaration or class definition");
         }
 
         return statements;

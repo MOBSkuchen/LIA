@@ -78,6 +78,7 @@
                 "elif" => TokenType.Elif,
                 "while" => TokenType.While,
                 "namespace" => TokenType.Namespace,
+                "pause" => TokenType.Pause,
                 _ => TokenType.Identifier
             };
             AddToken(type, identifier, startPos, _counter);
@@ -152,6 +153,7 @@
                     }
                     case '"': LexString(); break;
                     case '#': LexComment(); break;
+                    case '°': AddSingleToken(TokenType.Pause); break;
                     default:
                         if (char.IsWhiteSpace(c))
                             continue;
@@ -202,6 +204,7 @@
         And,
         Or,
         Namespace,
+        Pause,
         // not real
         Statement,
         ExpressionLike,
