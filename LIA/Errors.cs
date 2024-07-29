@@ -2,13 +2,13 @@
 
 namespace LIA;
 
-public class Errors
+public static class Errors
 {
+    public static bool DevDebug = false;
     public static void ThrowCodeError(CodeLocation codeLocation, string message, ErrorCodes errNum)
     {
-        Console.WriteLine($"{ConsoleLib.As(errNum.ToString(), ConsoleLib.TextBold, ConsoleLib.FgBrightRed)} [{ConsoleLib.As(((int)errNum).ToString(), 0, ConsoleLib.FgCyan)}] : {message}");
         ViewCodeLocation(codeLocation, errNum == ErrorCodes.EndOfFile);
-        Exit(errNum);
+        Error(errNum, message);
     }
 
     private static void ViewCodeLocation(CodeLocation codeLocation, bool isEof)
@@ -57,8 +57,15 @@ public class Errors
         Warning(warningCodes, message);
     }
 
+    public static void Error(ErrorCodes errNum, string message)
+    {
+        Console.WriteLine($"{ConsoleLib.As(errNum.ToString(), ConsoleLib.TextBold, ConsoleLib.FgBrightRed)} [{ConsoleLib.As(((int)errNum).ToString(), 0, ConsoleLib.FgCyan)}] : {message}");
+        Exit(errNum);
+    }
+
     public static void Exit(ErrorCodes errorCode)
     {
+        if ((errorCode != ErrorCodes.None) && DevDebug) throw new Exception($"Exit with error {errorCode}! (Dev debug is enabled)");
         int exitCode = (int)errorCode;
         Console.WriteLine($"Exited with code {ConsoleLib.As(exitCode.ToString(), ConsoleLib.TextBold, errorCode == ErrorCodes.None ? ConsoleLib.FgCyan : ConsoleLib.FgRed)}");
         Environment.Exit(exitCode);
@@ -69,6 +76,10 @@ public enum ErrorCodes
 {
     None,
     Unknown,
+    
+    UnknownArgument,
+    UnaccessibleFile,
+    
     Unintelligeble,
     InvalidToken,
     EndOfFile,
@@ -77,7 +88,7 @@ public enum ErrorCodes
     InvalidType,
     TypeConflict,
     UnknownVariable,
-    UnknownFunction
+    UnknownFunction,
 }
 
 public enum WarningCodes
