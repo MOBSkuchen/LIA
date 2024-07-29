@@ -45,9 +45,20 @@
             AddToken(TokenType.Number, _code.Substring(startPos, _counter - startPos), startPos, _counter);
         }
 
-        public void LexComment()
+        private string GetAfter(string content, int length) => content.Substring(length + 2, content.Length - (2 + length));
+        private bool BoolParseComment(string content, int length) => bool.Parse(GetAfter(content, length));
+
+        private void InterpretComment(string comment)
+        {
+            var lowerComment = comment.ToLower();
+            if (lowerComment.StartsWith(":devdebug>")) GlobalContext.DevDebug = BoolParseComment(lowerComment, 8);
+            if (lowerComment.StartsWith(":trimunreachablecode>")) GlobalContext.CompilationOptions.TrimUnreachableCode = BoolParseComment(lowerComment, 19);
+        }
+
+        private void LexComment()
         {
             bool longComment = CurrentChar == '*';
+            string total = "";
             while (_counter < _code.Length)
             {
                 char c = _code[_counter++];
@@ -57,7 +68,9 @@
                     if (CurrentChar == '#')
                         break;
                 }
+                total += c;
             }
+            if (total.StartsWith(":")) InterpretComment(total);
         }
 
         private void LexIdentifier()
