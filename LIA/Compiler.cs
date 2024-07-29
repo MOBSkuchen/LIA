@@ -331,5 +331,6 @@ public class Compiler(CodeFile codeFile)
         return total;
     }
 
-    public void WriteToFile(string path) => File.WriteAllText(path, Get());
+    public string WriteToPath(string path) => Utils.WriteStringTo(path, Get());
+    public string GetNewPath(string ext = "il") => Path.GetFileNameWithoutExtension(_codeFile.Filepath) + "." + ext;
 }

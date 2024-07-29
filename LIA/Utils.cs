@@ -18,9 +18,10 @@ public class Utils
         return string.Join("\n", stack);
     }
 
-    public static void WriteStringTo(string path, string text)
+    public static string WriteStringTo(string path, string text)
     {
         File.WriteAllText(path, text);
+        return path;
     }
 
     public static (int, int) GetLineNumber(string code, int position)
