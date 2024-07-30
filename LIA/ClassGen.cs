@@ -14,6 +14,10 @@ public class ClassGen
         "oplesserequals",
         "opfalse",
         "optrue",
+        "oprem",
+        "opxor",
+        "opequals",
+        "opnot"
     };
     private string _head;
     public ClassAttributes ClassAttributes;

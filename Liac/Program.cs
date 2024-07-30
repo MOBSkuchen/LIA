@@ -165,7 +165,7 @@ public class Liac
             if (options.BuildType! != "exe") GlobalContext.RequireMainDefinition = false;
             var outputFile = options.OutputFile ?? compiler.GetNewPath(options.BuildType == "exe" ? "exe" : "dll");
             var ilPath = compiler.WriteToPath(options.EmitType!.Contains("il") ? compiler.GetNewPath() : Path.GetTempFileName());
-            var emitTimes = options.EmitType!.Contains("time");     // Handle this
+            var emitTimes = options.EmitType!.Contains("time");     // TODO: Handle this
             var processArgs = CompileIl(options, ilPath, outputFile);
             var exePath = processArgs[0]; processArgs.RemoveAt(0);
         

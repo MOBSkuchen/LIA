@@ -46,10 +46,13 @@ public class Compiler
 
         foreach (var classGen in new List<ClassGen> {_globalDeclarations["i32"], _globalDeclarations["i64"], _globalDeclarations["f32"], _globalDeclarations["f64"]})
         {
-            foreach (var operation in new List<Operation> {Operation.Add, Operation.Sub, Operation.Mul, Operation.Div }) {
+            foreach (var operation in new List<Operation> {Operation.Add, Operation.Sub, Operation.Mul, Operation.Div, 
+                         Operation.Rem, Operation.Xor, Operation.Equals, Operation.Not, Operation.GreaterThan, 
+                         Operation.LesserThan, Operation.GreaterThanEquals, Operation.LesserThanEquals, 
+                         Operation.IsFalse, Operation.IsTrue}) {
                 var thisTypeEm = new TypeEm(new RealType(classGen));
                 classGen.SpawnFunction(Operation2ClassMethod(operation), false, true, true, thisTypeEm, new List<(string, TypeEm)>
-                {("a", thisTypeEm), ("b", thisTypeEm)}, true).SpawnSegment("Start").PerformOp(operation);
+                {("a", thisTypeEm), ("b", thisTypeEm)}, true).SpawnSegment("Operation!").PerformOp(operation);  // Name this segment like this so it will throw an error if it is used
             }
         }
     }
@@ -150,7 +153,7 @@ public class Compiler
             case TokenType.GreaterThan: return Operation.GreaterThan;
             case TokenType.GreaterThanEquals: return Operation.GreaterThanEquals;
             case TokenType.LessThan: return Operation.LesserThan;
-            case TokenType.LessThanEquals: return Operation.LesserThanEquals;
+            case TokenType.ExclamationMark: return Operation.Not;
             default: throw new Exception("oops");
         }
     }
@@ -177,8 +180,6 @@ public class Compiler
             var leftType = InferExprType(((BinaryExpr) expr).Left, segment.Function, localsLookup);
             var convOpR = ConvertOperation(((BinaryExpr) expr).Operator);
             var convOp = Operation2ClassMethod(convOpR);
-            Console.WriteLine(convOp);
-            Console.WriteLine(leftType.RealType.ClassGen.ClassMethodAccess);
             if (!leftType.RealType.ClassGen.ClassMethodAccess.TryGetValue(convOp, out var funcName))
                 ThrowUnimplementedClassMethod((BinaryExpr) expr, leftType.RealType, convOpR);
             var func = leftType.RealType.ClassGen.Functions[funcName!];
@@ -214,12 +215,16 @@ public class Compiler
             case Operation.Mul: return "opmul";
             case Operation.Div: return "opdiv";
             case Operation.GreaterThan: return "opgreater";
-            case Operation.GreaterThanEquals: return "Opgreaterequals";
+            case Operation.GreaterThanEquals: return "opgreaterequals";
             case Operation.LesserThan: return "oplesser";
-            case Operation.LesserThanEquals: return "Oplesserequals";
+            case Operation.LesserThanEquals: return "oplesserequals";
+            case Operation.Not: return "opnot";
+            case Operation.Rem: return "oprem";
+            case Operation.Xor: return "opxor";
             case Operation.IsFalse: return "opfalse";
             case Operation.IsTrue: return "optrue";
-            default: throw new Exception("aasd");
+            case Operation.Equals: return "opequals";
+            default: throw new Exception($"invalid op {operation}");
         }
     }
     

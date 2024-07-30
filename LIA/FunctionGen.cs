@@ -215,7 +215,19 @@ public class Segment : ICtxBGenBp
             }
             case Operation.Not: Emit(OpCodes.Not); break;
             case Operation.Xor: Emit(OpCodes.Xor); break;
-            default: throw new Exception("Invalid math-op");
+            case Operation.IsFalse:
+            {
+                LoadInt(0, false);
+                Emit(OpCodes.Ceq);
+                break;
+            }
+            case Operation.IsTrue:
+            {
+                LoadInt(1, false);
+                Emit(OpCodes.Ceq);
+                break;
+            }
+            default: throw new Exception($"Invalid math-op {operation}");
         }
     }
 
