@@ -95,6 +95,7 @@
                 "namespace" => TokenType.Namespace,
                 "pause" => TokenType.Pause,
                 "static" => TokenType.Static,
+                "as" => TokenType.As,
                 _ => TokenType.Identifier
             };
             AddToken(type, identifier, startPos, _counter);
@@ -131,8 +132,8 @@
                     case '!': {
                         if (_code[_counter] == '=')
                         {
-                            AddDoubleToken(TokenType.NotEquals);
                             _counter++;
+                            AddDoubleToken(TokenType.NotEquals);
                         }
                         else AddSingleToken(TokenType.ExclamationMark);
                         break;
@@ -142,8 +143,13 @@
                         
                         if (_code[_counter] == '=')
                         {
-                            AddDoubleToken(TokenType.DoubleEquals);
                             _counter++;
+                            AddDoubleToken(TokenType.DoubleEquals);
+                        }
+                        else if (_code[_counter] == '<')
+                        {
+                            _counter++;
+                            AddDoubleToken(TokenType.As);
                         }
                         else AddSingleToken(TokenType.Equals);
                         break;
@@ -152,8 +158,8 @@
                     case '<': {
                         if (_code[_counter] == '=')
                         {
-                            AddDoubleToken(TokenType.LessThanEquals);
                             _counter++;
+                            AddDoubleToken(TokenType.LessThanEquals);
                         }
                         else AddSingleToken(TokenType.LessThan);
                         break;
@@ -161,8 +167,8 @@
                     case '>': {
                         if (_code[_counter] == '=')
                         {
-                            AddDoubleToken(TokenType.GreaterThanEquals);
                             _counter++;
+                            AddDoubleToken(TokenType.GreaterThanEquals);
                         }
                         else AddSingleToken(TokenType.GreaterThan);
                         break;
@@ -222,6 +228,7 @@
         Namespace,
         Pause,
         Static,
+        As,
         // not real
         Statement,
         ExpressionLike,

@@ -109,7 +109,12 @@
         public IdentifierExpr Name = name;
         public IdentifierExpr Type = type;
     }
-    
+
+    public class CastExpr(Expr prevExpr, IdentifierExpr destType, int startPos, int endPos) : Expr(startPos, endPos)
+    {
+        public Expr PrevExpr = prevExpr;
+        public IdentifierExpr DestType = destType;
+    }
 
     // Function Declaration
     public class FunctionDecl(

@@ -66,6 +66,7 @@ public class Parser(Lexer lexer)
     {
         switch (type)
         {
+            case TokenType.As:
             case TokenType.Plus:
             case TokenType.Minus:
                 return 2;
@@ -91,7 +92,7 @@ public class Parser(Lexer lexer)
     private Expr? ParseExpression(int precedence = 0)
     {
         Expr? left = ParseUnary();
-        if (left == null) ThrowSyntaxError(PreviousToken.StartPos, PreviousToken.EndPos, $"Expected an expression after this but got nothing");
+        if (left == null) ThrowSyntaxError(PreviousToken.StartPos, PreviousToken.EndPos, "Expected an expression after this but got nothing");
 
         while (true)
         {
@@ -102,6 +103,12 @@ public class Parser(Lexer lexer)
             }
 
             Advance(); // Move past the operator
+            if (currentOp == TokenType.As)
+            {
+                Consume(TokenType.Identifier, $"Expected a type for a Cast-Expression");
+                var typeTok = new IdentifierExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
+                return new CastExpr(left!, typeTok, left!.StartPos, typeTok.EndPos);
+            }
             int nextPrecedence = GetOperatorPrecedence(currentOp.Value);
             Expr? right = ParseExpression(nextPrecedence);
             if (right == null)

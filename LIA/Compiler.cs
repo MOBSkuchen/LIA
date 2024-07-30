@@ -152,6 +152,7 @@ public class Compiler
             case TokenType.GreaterThanEquals: return Operation.GreaterThanEquals;
             case TokenType.LessThan: return Operation.LesserThan;
             case TokenType.ExclamationMark: return Operation.Not;
+            case TokenType.As: return Operation.Cast;
             default: throw new Exception("oops");
         }
     }
@@ -194,6 +195,11 @@ public class Compiler
                 segment.LoadInt(1, false);
                 segment.PerformOp(Operation.Sub);
             }
+        }
+        else if (expr.GetType() == typeof(CastExpr))
+        {
+            PutExprOnStack(((CastExpr) expr).PrevExpr, segment, localsLookup);
+            segment.PerformCast(ConvertType(((CastExpr) expr).DestType));
         }
         else if (expr.GetType() == typeof(IdentifierExpr))
         {
@@ -255,6 +261,10 @@ public class Compiler
             if (functionGen.Class.Functions.ContainsKey(((FunctionCallExpr)expr).Name.Name))
                 return functionGen.Class.Functions[((FunctionCallExpr)expr).Name.Name].Item1.TypeEm;
             ThrowUnknownFunctionError((FunctionCallExpr)expr);
+        }
+        if (expr.GetType() == typeof(CastExpr))
+        {
+            return ConvertType(((CastExpr) expr).DestType);
         }
         if (expr.GetType() == typeof(IdentifierExpr))
         {

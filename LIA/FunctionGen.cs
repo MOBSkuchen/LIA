@@ -230,6 +230,8 @@ public class Segment : ICtxBGenBp
             default: throw new Exception($"Invalid math-op {operation}");
         }
     }
+    
+    public void PerformCast(TypeEm destType) {}
 
     public void BranchIf(bool state, string label)
     {

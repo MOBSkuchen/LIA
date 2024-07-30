@@ -19,4 +19,6 @@ public enum Operation
     IsTrue,
     // Something -> bool
     Not,
+    // Can not implement via class method, uses standard cast => ((BinaryExpr) expr)
+    Cast
 }
