@@ -62,8 +62,7 @@ public class ClassGen
         {
             total += $"{Utils.FormatLines(function.Value.Item2.Get())}\n";
         }
-        
-        total += "}";
+        if (Functions.Count >= 1) total += "}";
 
         return total;
     }
