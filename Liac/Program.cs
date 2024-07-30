@@ -65,12 +65,36 @@ public class Liac
         return (int)ErrorCodes.None;
     }
     
-    static string FindIlasm(Options.CompileOptions options)
+    static string? FindIlasm(Options.CompileOptions options)
     {
-        // TODO: Check validity
         if (options.IlCompilerPath != null) return options.IlCompilerPath;
-        // TODO: Do some actual finding
-        return "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\ilasm.exe";
+        string[] frameworkPaths = new[]
+        {
+            @"Microsoft.NET\Framework\v4.0.30319",
+            @"Microsoft.NET\Framework\v2.0.50727"
+        };
+
+        foreach (var possiblePath in frameworkPaths)
+        {
+            string fullPath;
+
+            if (Environment.Is64BitProcess)
+            {
+                fullPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), possiblePath.Replace(@"\Framework\", @"\Framework64\"));
+                if (Directory.Exists(fullPath))
+                {
+                    return Path.Combine(fullPath, "ilasm.exe");
+                }
+            }
+
+            fullPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), possiblePath);
+            if (Directory.Exists(fullPath))
+            {
+                return Path.Combine(fullPath, "ilasm.exe");
+            }
+        }
+
+        return null;
     }
 
     static List<String> CompileIl(Options.CompileOptions options, string ilPath, string outputFile)
@@ -86,7 +110,9 @@ public class Liac
             other = splitA[0];
         }
         else other = options.Arch!;
-        var processArguments = new List<string> {FindIlasm(options), ilPath, "/QUIET", "/NOLOGO"};
+        var ilasmLoc = FindIlasm(options);
+        if (ilasmLoc == null || !Path.Exists(ilasmLoc)) Errors.Error(ErrorCodes.IlasmNotFound, "ilasm.exe was not found, please ensure that you have it installed or specify a valid location using --ilcompiler <path> / -l <path>");
+        var processArguments = new List<string> {ilasmLoc, ilPath, "/QUIET", "/NOLOGO"};
         if (b64) processArguments.Add("/PE64");
         else processArguments.Add("/PE32");
         switch (other)
