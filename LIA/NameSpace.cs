@@ -1,11 +1,12 @@
 ﻿namespace LIA;
 
-public class NameSpace(string name)
+public class NameSpace(string name, bool builtin = false)
 {
     private List<string> _instructions = new List<string>();
     private readonly string _head = $".namespace {name}";
     public readonly string Name = name;
-
+    public readonly bool Builtin = builtin;
+    
     public Dictionary<string, (ClassAttributes, ClassGen)> Classes =
         new Dictionary<string, (ClassAttributes, ClassGen)>();
 
@@ -31,9 +32,9 @@ public class NameSpace(string name)
         Assembly($"extern {name}");
     }
     
-    public ClassGen SpawnClass(bool isPublic, string name1)
+    public ClassGen SpawnClass(bool isPublic, string name1, string? coverName = null)
     {
-        var classA = new ClassAttributes(name, isPublic, name1);
+        var classA = new ClassAttributes(name, isPublic, name1, Builtin, coverName);
         var classG = new ClassGen(classA);
         Classes.Add(name1, (classA, classG));
         return classG;

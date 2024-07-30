@@ -87,6 +87,7 @@ public enum ErrorCodes
     TypeConflict,
     UnknownVariable,
     UnknownFunction,
+    UnimplementedClassMethod,
 }
 
 public enum WarningCodes
@@ -95,5 +96,6 @@ public enum WarningCodes
     Unknown,
     MainNotDefined,
     UselessCode,
-    UnreachableCode
+    UnreachableCode,
+    InvalidClassMethod,
 }

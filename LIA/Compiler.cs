@@ -17,22 +17,51 @@ public class LocalsLookup
     public int Get(string local) => RawLocalsLookup.ContainsKey(local) ? RawLocalsLookup[local] : -1;
 }
 
-public class Compiler(CodeFile codeFile)
+public class Compiler
 {
-    private CodeFile _codeFile = codeFile;
+    public Compiler(CodeFile codeFile)
+    {
+        _codeFile = codeFile;
+        _globalDeclarations = new Dictionary<string, ClassGen>
+        {
+            {
+                "i32", BuiltinNameSpace.SpawnClass(true, "int32", "i32")
+            },
+            {
+                "i64", BuiltinNameSpace.SpawnClass(true, "int64", "i64")
+            },
+            {
+                "f32", BuiltinNameSpace.SpawnClass(true, "float32", "f32")
+            },
+            {
+                "f64", BuiltinNameSpace.SpawnClass(true, "float64", "f64")
+            },
+            {
+                "string", BuiltinNameSpace.SpawnClass(true, "string", "string")
+            },
+            {
+                "void", BuiltinNameSpace.SpawnClass(true, "void", "void")
+            }
+        };
 
+        foreach (var classGen in new List<ClassGen> {_globalDeclarations["i32"], _globalDeclarations["i64"], _globalDeclarations["f32"], _globalDeclarations["f64"]})
+        {
+            foreach (var operation in new List<Operation> {Operation.Add, Operation.Sub, Operation.Mul, Operation.Div }) {
+                var thisTypeEm = new TypeEm(new RealType(classGen));
+                classGen.SpawnFunction(Operation2ClassMethod(operation), false, true, true, thisTypeEm, new List<(string, TypeEm)>
+                {("a", thisTypeEm), ("b", thisTypeEm)}, true).SpawnSegment("Start").PerformOp(operation);
+            }
+        }
+    }
+
+    private CodeFile _codeFile;
+    
     private int _miscInt = 0;
     private string Cond => $"Cond_{_miscInt++}";
     private string AfterCond => $"AfterCond_{_miscInt++}";
-    private Dictionary<string, ClassAttributes> _globalDeclarations = new Dictionary<string, ClassAttributes>()
-    {
-        {"i32", new ClassAttributes("Sys", true, "int32", true)},
-        {"i64", new ClassAttributes("Sys", true, "int64", true)},
-        {"f32", new ClassAttributes("Sys", true, "float32", true)},
-        {"f64", new ClassAttributes("Sys", true, "float64", true)},
-        {"string", new ClassAttributes("Sys", true, "string", true)},
-        {"void", new ClassAttributes("Sys", true, "void", true)},
-    };
+    private NameSpace BuiltinNameSpace = new NameSpace("Sys", true);
+
+    private Dictionary<string, ClassGen> _globalDeclarations;
     private List<NameSpace> _nameSpaces = new List<NameSpace>() {new NameSpace("Program")};
     private NameSpace CurrentNameSpace => _nameSpaces[^1];
     
@@ -53,6 +82,9 @@ public class Compiler(CodeFile codeFile)
     private void ThrowUnknownFunctionError(FunctionCallExpr functionCall) => ThrowError(functionCall.Name,
         $"The function '{functionCall.Name.Name}' was not found or could not be acessed in this context!",
         ErrorCodes.UnknownFunction);
+
+    private void ThrowUnimplementedClassMethod(BinaryExpr binaryExpr, RealType realType, Operation operation) =>
+        ThrowError(binaryExpr, $"The type '{realType.ClassAttributes.CoverName}' does not implement the operation {operation}", ErrorCodes.UnimplementedClassMethod);
     
     private TypeEm ConvertType(IdentifierExpr identifierExpr)
     {
@@ -78,7 +110,7 @@ public class Compiler(CodeFile codeFile)
         }
         
         if (_globalDeclarations.TryGetValue(name, out var type)) return new TypeEm(new RealType(type), isRef, goesOut);
-        if (CurrentNameSpace.Classes.TryGetValue(name, out var type2)) return new TypeEm(new RealType(type2.Item1), isRef, goesOut);
+        if (CurrentNameSpace.Classes.TryGetValue(name, out var type2)) return new TypeEm(new RealType(type2.Item2), isRef, goesOut);
         return null;
     }
 
@@ -102,7 +134,7 @@ public class Compiler(CodeFile codeFile)
         
         foreach (var func in classDecl.Methods)
         {
-            ParseFunction(func, classGen.SpawnFunction(func.Name.Name, true, func.Public, ConvertType(func.ReturnType), ConvertParameters(func.Parameters)));
+            ParseFunction(func, classGen.SpawnFunction(func.Name.Name, func.Static, func.Public, func.Class, ConvertType(func.ReturnType), ConvertParameters(func.Parameters), false));
         }
     }
 
@@ -142,9 +174,17 @@ public class Compiler(CodeFile codeFile)
         }
         else if (expr.GetType() == typeof(BinaryExpr))
         {
+            var leftType = InferExprType(((BinaryExpr) expr).Left, segment.Function, localsLookup);
+            var convOpR = ConvertOperation(((BinaryExpr) expr).Operator);
+            var convOp = Operation2ClassMethod(convOpR);
+            Console.WriteLine(convOp);
+            Console.WriteLine(leftType.RealType.ClassGen.ClassMethodAccess);
+            if (!leftType.RealType.ClassGen.ClassMethodAccess.TryGetValue(convOp, out var funcName))
+                ThrowUnimplementedClassMethod((BinaryExpr) expr, leftType.RealType, convOpR);
+            var func = leftType.RealType.ClassGen.Functions[funcName!];
             PutExprOnStack(((BinaryExpr)expr).Left, segment, localsLookup);
             PutExprOnStack(((BinaryExpr)expr).Right, segment, localsLookup);
-            segment.PerformOp(ConvertOperation(((BinaryExpr)expr).Operator));
+            func.Item2.CreateOpConstructor().AddToSegment(segment);
         }
         else if (expr.GetType() == typeof(UnaryExpr))
         {
@@ -164,6 +204,24 @@ public class Compiler(CodeFile codeFile)
         }
         else throw new Exception("Parser fucked up or I did, idk");
     }
+
+    public string Operation2ClassMethod(Operation operation)
+    {
+        switch (operation)
+        {
+            case Operation.Add: return "opadd";
+            case Operation.Sub: return "opsub";
+            case Operation.Mul: return "opmul";
+            case Operation.Div: return "opdiv";
+            case Operation.GreaterThan: return "opgreater";
+            case Operation.GreaterThanEquals: return "Opgreaterequals";
+            case Operation.LesserThan: return "oplesser";
+            case Operation.LesserThanEquals: return "Oplesserequals";
+            case Operation.IsFalse: return "opfalse";
+            case Operation.IsTrue: return "optrue";
+            default: throw new Exception("aasd");
+        }
+    }
     
     private TypeEm InferExprType(Expr expr, FunctionGen functionGen, LocalsLookup localsLookup)
     {
@@ -179,7 +237,16 @@ public class Compiler(CodeFile codeFile)
             return RawConvertType("string")!;
         if (expr.GetType() == typeof(UnaryExpr))
             return InferExprType(((UnaryExpr)expr).Operand, functionGen, localsLookup);
-        if (expr.GetType() == typeof(BinaryExpr)) return InferExprType(((BinaryExpr)expr).Left, functionGen, localsLookup);
+        if (expr.GetType() == typeof(BinaryExpr))
+        {
+            var leftType = InferExprType(((BinaryExpr) expr).Left, functionGen, localsLookup);
+            var convOpR = ConvertOperation(((BinaryExpr) expr).Operator);
+            var convOp = Operation2ClassMethod(convOpR);
+            if (!leftType.RealType.ClassGen.ClassMethodAccess.TryGetValue(convOp, out var funcName))
+                ThrowUnimplementedClassMethod((BinaryExpr) expr, leftType.RealType, convOpR);
+            var func = leftType.RealType.ClassGen.Functions[funcName!];
+            return func.Item1.TypeEm;
+        }
         if (expr.GetType() == typeof(FunctionCallExpr))
         {
             if (functionGen.Class.Functions.ContainsKey(((FunctionCallExpr)expr).Name.Name))
@@ -315,7 +382,7 @@ public class Compiler(CodeFile codeFile)
             else if (topLevelStatement.GetType() == typeof(ClassDecl)) ParseClass((ClassDecl) topLevelStatement);
         }
         
-        if (!_mainDefined && !GlobalContext.CompilationOptions.DisableWarningMainNotDefined) Errors.Warning(WarningCodes.MainNotDefined, 
+        if (GlobalContext.RequireMainDefinition && !_mainDefined && !GlobalContext.CompilationOptions.DisableWarningMainNotDefined) Errors.Warning(WarningCodes.MainNotDefined, 
             "Function 'main' (public static, public class) is not defined! This Program will not run!");
     }
 

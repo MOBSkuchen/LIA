@@ -94,6 +94,7 @@
                 "while" => TokenType.While,
                 "namespace" => TokenType.Namespace,
                 "pause" => TokenType.Pause,
+                "static" => TokenType.Static,
                 _ => TokenType.Identifier
             };
             AddToken(type, identifier, startPos, _counter);
@@ -220,6 +221,7 @@
         Or,
         Namespace,
         Pause,
+        Static,
         // not real
         Statement,
         ExpressionLike,

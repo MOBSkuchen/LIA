@@ -1,9 +1,10 @@
 ﻿namespace LIA;
 
-public struct ClassAttributes(string ns, bool isPublic, string name, bool builtin = false)
+public struct ClassAttributes(string ns, bool isPublic, string name, bool builtin = false, string? coverName = null)
 {
     public string NameSpace = ns;
     public string Name = name;
+    public string CoverName = coverName ?? name;
     public bool IsPublic = isPublic;
     public bool Builtin = builtin;
     

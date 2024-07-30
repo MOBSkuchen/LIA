@@ -1,13 +1,16 @@
 ﻿namespace LIA;
 
 public struct FunctionAttributes(string ns, string @class, string name, 
-    bool isStatic, bool isPublic, TypeEm typeEm, List<(string, TypeEm)>? args, string? library = null)
+    bool isStatic, bool isPublic, bool isClass, TypeEm typeEm, List<(string, TypeEm)>? args,
+    bool isBuiltin = false, string? library = null)
 {
     public string Namespace = ns;
     public string Class = @class;
     public string? Library = library;
     public bool IsStatic = isStatic;
     public bool IsPublic = isPublic;
+    public bool IsClass = isClass;
+    public bool IsBuiltin = isBuiltin;
     public string Name = name;
     public TypeEm TypeEm = typeEm;
     public List<(string, TypeEm)>? Arguments = args;

@@ -118,6 +118,8 @@
         List<ParameterExpr> parameters,
         BlockStmt body,
         bool @public,
+        bool @static,
+        bool @class,
         int startPos,
         int endPos)
         : Stmt(startPos, endPos)
@@ -125,6 +127,8 @@
         public IdentifierExpr Name { get; } = name;
         public IdentifierExpr ReturnType { get; } = returnType;
         public readonly bool Public = @public;
+        public readonly bool Static = @static;
+        public readonly bool Class = @class;
         public List<ParameterExpr> Parameters { get; } = parameters;
         public BlockStmt Body { get; } = body;
     }

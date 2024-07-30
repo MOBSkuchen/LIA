@@ -307,6 +307,8 @@ public class Parser(Lexer lexer)
     {
         int startPos = PreviousToken.StartPos;
         bool isPublic = Match(TokenType.Public);
+        bool isClass = Match(TokenType.Class);
+        bool isStatic = !isClass && Match(TokenType.Static);
         if (!isPublic) Consume(TokenType.Private, "Must declare public or private function");
         var type = Consume(TokenType.Identifier, "Must declare a return type");
         var name = Consume(TokenType.Identifier, "Must declare the name");
@@ -314,7 +316,7 @@ public class Parser(Lexer lexer)
         if (Match(TokenType.OpenParen)) parameters = ParseParameters();
         Consume(TokenType.Colon, "Expected colon after function-head declaration");
         var body = ParseBody();
-        return new FunctionDecl(CreateIdent(name), CreateIdent(type), parameters, body, isPublic, startPos, CurrentToken.EndPos);
+        return new FunctionDecl(CreateIdent(name), CreateIdent(type), parameters, body, isPublic, isStatic, isClass, startPos, CurrentToken.EndPos);
     }
 
     private ClassDecl ParseClass()

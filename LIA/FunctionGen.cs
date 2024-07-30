@@ -6,7 +6,7 @@ public class FunctionGen : ICtxBGenBp
     private string _head;
     public List<string> Instructions { get; set; } = new List<string>();
     public List<(string, TypeEm)> LocalVariables = new List<(string, TypeEm)>();
-    private List<Segment> _segments = new List<Segment>();
+    public List<Segment> Segments = new List<Segment>();
 
     // Track stack size to dynamically set 'maxstack'
     private int _stacksize = 0;
@@ -23,7 +23,7 @@ public class FunctionGen : ICtxBGenBp
     public Segment SpawnSegment(string name)
     {
         var segment = new Segment(this, name);
-        _segments.Add(segment);
+        Segments.Add(segment);
         return segment;
     }
 
@@ -64,7 +64,7 @@ public class FunctionGen : ICtxBGenBp
 
         total += "\n";
         
-        foreach (var segment in _segments)
+        foreach (var segment in Segments)
         {
             total += "  " + segment.Get() + "\n";
         }
@@ -74,6 +74,8 @@ public class FunctionGen : ICtxBGenBp
 
     private void AppendRaw(string operation) => Instructions.Add(operation);
     public void AddComment(string comment) => Instructions[^1] += ("    // " + comment);
+
+    public OperationConstructor CreateOpConstructor() => new OperationConstructor(this);
 }
 
 public class Segment : ICtxBGenBp
@@ -280,4 +282,17 @@ public class Segment : ICtxBGenBp
     }
 
     public void Pop() => Emit(OpCodes.Pop);
+}
+
+public class OperationConstructor(FunctionGen functionGen)
+{
+    public FunctionGen InstFunctionGen = functionGen;
+
+    public void AddToSegment(Segment segment)
+    {
+        foreach (var instrSegment in InstFunctionGen.Segments)
+        {
+            segment.Instructions.AddRange(instrSegment.Instructions);
+        }
+    }
 }

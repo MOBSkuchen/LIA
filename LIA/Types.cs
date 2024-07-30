@@ -14,8 +14,9 @@ public class TypeEm
     public string Get() => _literal;
 }
 
-public class RealType(ClassAttributes classAttributes)
+public class RealType(ClassGen classGen)
 {
-    public ClassAttributes ClassAttributes = classAttributes;
-    public readonly string Literal = classAttributes.Builtin ? classAttributes.Name : $"{classAttributes.NameSpace}.{classAttributes.Name}";
+    public ClassGen ClassGen = classGen;
+    public ClassAttributes ClassAttributes = classGen.ClassAttributes;
+    public readonly string Literal = classGen.ClassAttributes.Builtin ? classGen.ClassAttributes.Name : $"{classGen.ClassAttributes.NameSpace}.{classGen.ClassAttributes.Name}";
 }
