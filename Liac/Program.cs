@@ -140,9 +140,11 @@ public class Liac
         
         if (!File.Exists(options.InputFile)) Errors.Error(ErrorCodes.UnaccessibleFile, $"Input file '{options.InputFile}' does not exist");
         
+        Console.Write("Tokenizing...");
         var codeFile = new CodeFile(options.InputFile!);
         var lexer = new Lexer(codeFile);
         lexer.Lex();
+        Console.Write(" done.\n");
 
         GlobalContext.CompilationOptions.DisableWarningMainNotDefined = options.BuildType!.ToLower() != "exe";
         
@@ -154,12 +156,17 @@ public class Liac
             }
         }
         
+        Console.Write("Parsing ...");
         var parser = new Parser(lexer);
+        var ast = parser.ParseTopLevel();
         
+        Console.Write(" done.\n");
+        Console.Write("Compiling to CIL ...");
         var compiler = new Compiler(codeFile);
         
-        compiler.ParseTopLevel(parser.ParseTopLevel());
+        compiler.ParseTopLevel(ast);
 
+        Console.Write(" done.\n");
         if (options.BuildType! != "nil")
         {
             if (options.BuildType! != "exe") GlobalContext.RequireMainDefinition = false;
@@ -185,7 +192,11 @@ public class Liac
             }
         }
 
-        if (options.EmitType!.Contains("il")) compiler.WriteToPath(compiler.GetNewPath());
+        if (options.EmitType!.Contains("il"))
+        {
+            Console.Write("Emitting IL");
+            compiler.WriteToPath(compiler.GetNewPath());
+        }
 
         return 0;
     }

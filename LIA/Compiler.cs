@@ -1,6 +1,4 @@
-﻿using System.Reflection.Emit;
-
-namespace LIA;
+﻿namespace LIA;
 
 public class LocalsLookup
 {
