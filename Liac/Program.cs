@@ -194,7 +194,7 @@ public class Liac
 
         if (options.EmitType!.Contains("il"))
         {
-            Console.Write("Emitting IL");
+            Console.WriteLine("Emitting IL");
             compiler.WriteToPath(compiler.GetNewPath());
         }
 
