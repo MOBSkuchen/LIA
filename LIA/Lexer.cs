@@ -109,7 +109,7 @@
             while (CurrentChar != '"' && CurrentChar != '\0')
                 Advance();
             Advance(); // Skip the closing quote
-            AddToken(TokenType.String, _code.Substring(startPos, _counter - startPos), startPos, _counter);
+            AddToken(TokenType.String, _code.Substring(startPos, _counter - startPos - 1), startPos, _counter);
         }
         
         public void Lex()
