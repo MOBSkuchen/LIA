@@ -1,9 +1,9 @@
 ﻿using System.Reflection.Emit;
 namespace LIA;
 
-public class FunctionGen : ICtxBGenBp
+public class FunctionGen(FunctionAttributes attrs, ClassGen classGen) : ICtxBGenBp
 {
-    private string _head;
+    private FunctionAttributes _functionAttributes = attrs;
     public List<string> Instructions { get; set; } = new List<string>();
     public List<(string, TypeEm)> LocalVariables = new List<(string, TypeEm)>();
     public List<Segment> Segments = new List<Segment>();
@@ -12,12 +12,24 @@ public class FunctionGen : ICtxBGenBp
     private int _stacksize = 0;
     private int _maxstacksize = 0;
 
-    public ClassGen Class;
-    
-    public FunctionGen(FunctionAttributes attrs, ClassGen classGen)
+    public ClassGen Class = classGen;
+
+    public void MergeWith(FunctionGen other)
     {
-        _head = attrs.Generate();
-        Class = classGen;
+        // Make sure that the functions match before doing this!
+        if (other._functionAttributes.Arguments != null)
+        {
+            if (_functionAttributes.Arguments == null) _functionAttributes.Arguments = other._functionAttributes.Arguments;
+            else _functionAttributes.Arguments.AddRange(other._functionAttributes.Arguments!);
+        }
+        
+        if (other.LocalVariables.Count != 0)
+        {
+            if (LocalVariables.Count == 0) LocalVariables = other.LocalVariables;
+            else LocalVariables.AddRange(other.LocalVariables);
+        }
+        
+        Segments.AddRange(other.Segments);
     }
 
     public Segment SpawnSegment(string name)
@@ -43,7 +55,7 @@ public class FunctionGen : ICtxBGenBp
 
     public string Get()
     {
-        string total = ".method " + _head + " { ";
+        string total = ".method " + _functionAttributes.Generate() + " { ";
         total += $"\n  .maxstack {_maxstacksize}";
         if (Instructions.Count != 0 || LocalVariables.Count != 0) total += "\n";
         var locals = new List<string>();
@@ -267,6 +279,15 @@ public class Segment : ICtxBGenBp
             case 3: Emit(OpCodes.Ldloc_3); break;
             default: Emit(OpCodes.Ldloc, n); break;
         }
+    }
+
+    public void StoreField(Field field)
+    {
+        // Push this        // ldarg.0
+        // Push expr        // *******
+        // Store field      // stfld <valType> <dstClass>::<dstName>
+        Function.DecStackSize(2);
+        Emit(OpCodes.Stfld, $"{field.RealType.Literal} {Function.Class.GetRealType.Literal}::{field.Name}");
     }
     
     public void Call(FunctionAttributes funcAttrs)

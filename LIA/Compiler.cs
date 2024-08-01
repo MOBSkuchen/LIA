@@ -17,30 +17,32 @@ public class LocalsLookup
 
 public class Compiler
 {
+    public static NameSpace BuiltinNameSpace = new NameSpace("Sys", true);
+    public static Dictionary<string, ClassGen> BuiltinTypes = new Dictionary<string, ClassGen>
+    {
+        {
+            "i32", BuiltinNameSpace.SpawnClass(true, "int32", "i32")
+        },
+        {
+            "i64", BuiltinNameSpace.SpawnClass(true, "int64", "i64")
+        },
+        {
+            "f32", BuiltinNameSpace.SpawnClass(true, "float32", "f32")
+        },
+        {
+            "f64", BuiltinNameSpace.SpawnClass(true, "float64", "f64")
+        },
+        {
+            "string", BuiltinNameSpace.SpawnClass(true, "string", "string")
+        },
+        {
+            "void", BuiltinNameSpace.SpawnClass(true, "void", "void")
+        }
+    };
     public Compiler(CodeFile codeFile)
     {
         _codeFile = codeFile;
-        _globalDeclarations = new Dictionary<string, ClassGen>
-        {
-            {
-                "i32", BuiltinNameSpace.SpawnClass(true, "int32", "i32")
-            },
-            {
-                "i64", BuiltinNameSpace.SpawnClass(true, "int64", "i64")
-            },
-            {
-                "f32", BuiltinNameSpace.SpawnClass(true, "float32", "f32")
-            },
-            {
-                "f64", BuiltinNameSpace.SpawnClass(true, "float64", "f64")
-            },
-            {
-                "string", BuiltinNameSpace.SpawnClass(true, "string", "string")
-            },
-            {
-                "void", BuiltinNameSpace.SpawnClass(true, "void", "void")
-            }
-        };
+        _globalDeclarations = BuiltinTypes;
 
         foreach (var classGen in new List<ClassGen> {_globalDeclarations["i32"], _globalDeclarations["i64"], _globalDeclarations["f32"], _globalDeclarations["f64"]})
         {
@@ -60,7 +62,6 @@ public class Compiler
     private int _miscInt = 0;
     private string Cond => $"Cond_{_miscInt++}";
     private string AfterCond => $"AfterCond_{_miscInt++}";
-    private NameSpace BuiltinNameSpace = new NameSpace("Sys", true);
 
     private Dictionary<string, ClassGen> _globalDeclarations;
     private List<NameSpace> _nameSpaces = new List<NameSpace>() {new NameSpace("Program")};
@@ -149,6 +150,28 @@ public class Compiler
         {
             ParseFunction(func, classGen.SpawnFunction(func.Name.Name, func.Static, func.Public, func.Class, ConvertType(func.ReturnType), ConvertParameters(func.Parameters), false));
         }
+        
+        // Create .ctor method
+
+        var ctor = classGen.SpawnFunction(".ctor", false, true, true, _globalDeclarations["void"].GetRealType.ConvDefaultTypeEm, new List<(string, TypeEm)>(), false);
+        var localsLookup = new LocalsLookup();
+        var initFields = ctor.SpawnSegment("_InitFlds");
+        foreach (var field in classGen.Fields)
+        {
+            if (field.Value.Default == null) continue;
+            initFields.LoadArg(0);
+            PutExprOnStack(field.Value.Default, initFields, localsLookup);
+            initFields.StoreField(field.Value);
+        }
+        
+        initFields.Call(FunctionAttributes.GetForObjCall());
+
+        if (classGen.Functions.ContainsKey("init"))
+        {
+            ctor.MergeWith(classGen.Functions["init"].Item2);
+            classGen.Functions.Remove("init");
+        }
+        else initFields.Ret();
     }
 
     private Operation ConvertOperation(TokenType operand)

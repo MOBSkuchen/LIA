@@ -19,6 +19,8 @@ public class RealType(ClassGen classGen)
     public ClassGen ClassGen = classGen;
     public ClassAttributes ClassAttributes = classGen.ClassAttributes;
     public readonly string Literal = classGen.ClassAttributes.Builtin ? classGen.ClassAttributes.Name : $"class {classGen.ClassAttributes.NameSpace}.{classGen.ClassAttributes.Name}";
+
+    public TypeEm ConvDefaultTypeEm => new TypeEm(this);
 }
 
 public class Field(RealType realType, string name, bool isStatic, bool isPublic, Expr? @default = null)

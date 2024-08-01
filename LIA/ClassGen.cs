@@ -2,8 +2,8 @@
 
 public class ClassGen
 {
-    public static List<string> PossibleClassMethods = new List<string>
-    {
+    private static readonly List<string> PossibleClassMethods =
+    [
         "opadd",
         "opsub",
         "opmul",
@@ -17,9 +17,17 @@ public class ClassGen
         "oprem",
         "opxor",
         "opequals",
-        "opnot"
-    };
-    private string _head;
+        "opnot",
+        "init"
+    ];
+
+    public static readonly List<string> SpecialMethods = [
+        ".ctor",
+        ".cctor",
+        "init"
+    ];
+    
+    private readonly string _head;
     public ClassAttributes ClassAttributes;
     public RealType GetRealType => new (this);
 
@@ -38,10 +46,11 @@ public class ClassGen
 
     public FunctionGen SpawnFunction(string name, bool isStatic, bool isPublic, bool isClassMethod, TypeEm typeEm, List<(string, TypeEm)>? args, bool isBuiltin)
     {
+        bool specialMethod = SpecialMethods.Contains(name);
         var functionAttributes = new FunctionAttributes($"{ClassAttributes.NameSpace}.{ClassAttributes.Name}",
-            ClassAttributes.Name, name, isStatic, isPublic, isClassMethod, typeEm, args, isBuiltin);
+            ClassAttributes.Name, name, isStatic, isPublic, isClassMethod, typeEm, args, specialMethod, isBuiltin);
         var function = new FunctionGen(functionAttributes, this);
-        if (isClassMethod)
+        if (isClassMethod && !specialMethod)
         {
             if (PossibleClassMethods.Contains(name.ToLower())) ClassMethodAccess.Add(name.ToLower(), name);
             else
