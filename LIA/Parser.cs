@@ -297,12 +297,12 @@ public class Parser(Lexer lexer)
         List<ParameterExpr> parameters = new List<ParameterExpr>();
         while (!IsAtEnd())
         {
+            if (Match(TokenType.CloseParen)) break;
             var name = Consume(TokenType.Identifier, 
                 "Expected a parameter declaration or closing parenthesis");
             Consume(TokenType.Colon, "Expected a colon here");
             var type = Consume(TokenType.Identifier, "Parameters must have types");
             parameters.Add(new ParameterExpr(CreateIdent(name), CreateIdent(type), name.StartPos, type.EndPos));
-            if (Match(TokenType.CloseParen)) break;
             if (Match(TokenType.Comma)) continue;
             ThrowInvalidTokenError(TokenType.CloseParen, CurrentToken.Type, "Expected a closing parenthesis");
         }
