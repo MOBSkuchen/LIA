@@ -116,6 +116,22 @@
         public IdentifierExpr DestType = destType;
     }
 
+    public class FieldStmt(
+        IdentifierExpr name,
+        IdentifierExpr type,
+        bool isStatic,
+        bool isPublic,
+        Expr? value,
+        int startPos,
+        int endPos) : Expr(startPos, endPos)
+    {
+        public IdentifierExpr Name = name;
+        public IdentifierExpr Type = type;
+        public bool IsStatic = isStatic;
+        public bool IsPublic = isPublic;
+        public Expr? Value = value;
+    }
+
     // Function Declaration
     public class FunctionDecl(
         IdentifierExpr name,
@@ -139,12 +155,13 @@
     }
 
     // Class Declaration
-    public class ClassDecl(string name, bool @public, List<FunctionDecl> methods, int startPos, int endPos)
+    public class ClassDecl(string name, bool @public, List<FunctionDecl> methods, List<FieldStmt> fields, int startPos, int endPos)
         : Stmt(startPos, endPos)
     {
         public string Name { get; } = name;
         public bool Public { get; } = @public;
         public List<FunctionDecl> Methods { get; } = methods;
+        public List<FieldStmt> Field { get; } = fields;
     }
 
     public class NamespaceDecl(string name, int startPos, int endPos) : Stmt(startPos, endPos)

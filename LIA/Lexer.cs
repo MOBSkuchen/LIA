@@ -96,6 +96,7 @@
                 "pause" => TokenType.Pause,
                 "static" => TokenType.Static,
                 "as" => TokenType.As,
+                "field" => TokenType.Field,
                 _ => TokenType.Identifier
             };
             AddToken(type, identifier, startPos, _counter);
@@ -229,6 +230,7 @@
         Pause,
         Static,
         As,
+        Field,
         // not real
         Statement,
         ExpressionLike,

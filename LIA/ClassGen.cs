@@ -21,11 +21,14 @@ public class ClassGen
     };
     private string _head;
     public ClassAttributes ClassAttributes;
+    public RealType GetRealType => new (this);
 
     public Dictionary<string, (FunctionAttributes, FunctionGen)> Functions =
-        new Dictionary<string, (FunctionAttributes, FunctionGen)>();
+        new ();
 
-    public Dictionary<string, string> ClassMethodAccess = new Dictionary<string, string>();
+    public Dictionary<string, Field> Fields = new ();
+    
+    public Dictionary<string, string> ClassMethodAccess = new ();
 
     public ClassGen(ClassAttributes classAttributes)
     {
@@ -51,11 +54,18 @@ public class ClassGen
         Functions.Add(name, (functionAttributes, function));
         return function;
     }
+
+    public void AddField(Field field) => Fields[field.Name] = field;
     
     public string Get()
     {
         string total = $".class {_head} " + "{";
-        if (Functions.Count == 0) total += " }";
+        if (Fields.Count != 0) total += "\n";
+        foreach (var field in Fields)
+        {
+            total += $"{field.Value.Get}\n";
+        }
+        if (Functions.Count == 0) total += "}";
         else total += "\n";
 
         foreach (var function in Functions)

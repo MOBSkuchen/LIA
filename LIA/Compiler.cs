@@ -110,8 +110,8 @@ public class Compiler
             name = name.Substring(1, name.Length - 1);
         }
         
-        if (_globalDeclarations.TryGetValue(name, out var type)) return new TypeEm(new RealType(type), isRef, goesOut);
-        if (CurrentNameSpace.Classes.TryGetValue(name, out var type2)) return new TypeEm(new RealType(type2.Item2), isRef, goesOut);
+        if (_globalDeclarations.TryGetValue(name, out var type)) return new TypeEm(type.GetRealType, isRef, goesOut);
+        if (CurrentNameSpace.Classes.TryGetValue(name, out var type2)) return new TypeEm(type2.Item2.GetRealType, isRef, goesOut);
         return null;
     }
 
@@ -129,10 +129,22 @@ public class Compiler
     private void ParseNameSpace(NamespaceDecl namespaceDecl) =>
         _nameSpaces.Add(new NameSpace(namespaceDecl.Name));
 
+    private void ParseField(FieldStmt fieldStmt, ClassGen classGen)
+    {
+        Field field = new Field(ConvertType(fieldStmt.Type).RealType, fieldStmt.Name.Name,
+            fieldStmt.IsStatic, fieldStmt.IsPublic, fieldStmt.Value);
+        classGen.AddField(field);
+    }
+
     private void ParseClass(ClassDecl classDecl)
     {
         var classGen = CurrentNameSpace.SpawnClass(classDecl.Public, classDecl.Name);
-        
+
+        foreach (var field in classDecl.Field)
+        {
+            ParseField(field, classGen);
+        }
+
         foreach (var func in classDecl.Methods)
         {
             ParseFunction(func, classGen.SpawnFunction(func.Name.Name, func.Static, func.Public, func.Class, ConvertType(func.ReturnType), ConvertParameters(func.Parameters), false));

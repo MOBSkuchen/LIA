@@ -18,5 +18,16 @@ public class RealType(ClassGen classGen)
 {
     public ClassGen ClassGen = classGen;
     public ClassAttributes ClassAttributes = classGen.ClassAttributes;
-    public readonly string Literal = classGen.ClassAttributes.Builtin ? classGen.ClassAttributes.Name : $"{classGen.ClassAttributes.NameSpace}.{classGen.ClassAttributes.Name}";
+    public readonly string Literal = classGen.ClassAttributes.Builtin ? classGen.ClassAttributes.Name : $"class {classGen.ClassAttributes.NameSpace}.{classGen.ClassAttributes.Name}";
+}
+
+public class Field(RealType realType, string name, bool isStatic, bool isPublic, Expr? @default = null)
+{
+    public RealType RealType = realType;
+    public bool IsStatic = isStatic;
+    public bool IsPublic = isPublic;
+    public string Name = name;
+    public Expr? Default = @default;
+
+    public string Get { get; } = ".field " + (isPublic ? "public " : " ") + (isStatic ? "static " : " ") + realType.Literal + " " + name;
 }

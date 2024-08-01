@@ -326,6 +326,18 @@ public class Parser(Lexer lexer)
         return new FunctionDecl(CreateIdent(name), CreateIdent(type), parameters, body, isPublic, isStatic, isClass, startPos, CurrentToken.EndPos);
     }
 
+    private FieldStmt ParseField()
+    {
+        int startPos = PreviousToken.StartPos;
+        bool isPublic = Match(TokenType.Public);
+        bool isStatic = Match(TokenType.Static);
+        if (!isPublic) Consume(TokenType.Private, "Must declare public or private field");
+        var type = CreateIdent(Consume(TokenType.Identifier, "Must declare a field type"));
+        var name = CreateIdent(Consume(TokenType.Identifier, "Must declare the name"));
+        Expr? value = Match(TokenType.Equals) ? ParseExpression() : null;
+        return new FieldStmt(name, type, isStatic, isPublic, value, startPos, PreviousToken.EndPos);
+    }
+
     private ClassDecl ParseClass()
     {
         int startPos = PreviousToken.StartPos;
@@ -334,14 +346,18 @@ public class Parser(Lexer lexer)
         var name = Consume(TokenType.Identifier, "Must declare the name").Content;
         Consume(TokenType.Colon, "Expected colon after class-head declaration");
         List<FunctionDecl> methods = new List<FunctionDecl>();
+        List<FieldStmt> fields = new List<FieldStmt>();
         while (!IsAtEnd())
         {
             if (Match(TokenType.Def))
             {
                 methods.Add(ParseFunction());
+            } else if (Match(TokenType.Field))
+            {
+                fields.Add(ParseField());
             }
             else if (Match(TokenType.Semicolon))
-                return new ClassDecl(name, isPublic, methods, startPos, PreviousToken.EndPos);
+                return new ClassDecl(name, isPublic, methods, fields, startPos, PreviousToken.EndPos);
             else break;
         }
         ThrowInvalidTokenError(TokenType.ClassLevel, CurrentToken!.Type, "For example a function definition or terminating semicolon");
