@@ -1,58 +1,59 @@
 ﻿namespace LIA
 {
     // Base AST Node
-    public abstract class AstNode(int startPos, int endPos)
+    public abstract class AstNode(CodeLocation codeLocation)
     {
-        public int StartPos { get; } = startPos;
-        public int EndPos { get; } = endPos;
+        public int StartPos { get; } = codeLocation.StartPosition;
+        public int EndPos { get; } = codeLocation.EndPosition;
+        public CodeLocation CodeLocation = codeLocation;
     }
 
     // Expression Nodes
-    public abstract class Expr(int startPos, int endPos) : AstNode(startPos, endPos);
+    public abstract class Expr(CodeLocation codeLocation) : AstNode(codeLocation);
 
-    public class BinaryExpr(Expr left, TokenType @operator, Expr right, int startPos, int endPos)
-        : Expr(startPos, endPos)
+    public class BinaryExpr(Expr left, TokenType @operator, Expr right, CodeLocation codeLocation)
+        : Expr(codeLocation)
     {
         public Expr Left { get; } = left;
         public Expr Right { get; } = right;
         public TokenType Operator { get; } = @operator;
     }
 
-    public class UnaryExpr(TokenType @operator, Expr operand, int startPos, int endPos)
-        : Expr(startPos, endPos)
+    public class UnaryExpr(TokenType @operator, Expr operand, CodeLocation codeLocation)
+        : Expr(codeLocation)
     {
         public Expr Operand { get; } = operand;
         public TokenType Operator { get; } = @operator;
     }
 
-    public class IntegerExpr(long number, int startPos, int endPos) : Expr(startPos, endPos)
+    public class IntegerExpr(long number, CodeLocation codeLocation) : Expr(codeLocation)
     {
         public long Value { get; } = number;
     }
     
-    public class FloatExpr(double number, int startPos, int endPos) : Expr(startPos, endPos)
+    public class FloatExpr(double number, CodeLocation codeLocation) : Expr(codeLocation)
     {
         public double Value { get; } = number;
     }
 
-    public class StringExpr(string value, int startPos, int endPos) : Expr(startPos, endPos)
+    public class StringExpr(string value, CodeLocation codeLocation) : Expr(codeLocation)
     {
         public string Value { get; } = value;
     }
 
-    public class FunctionCallExpr(IdentifierExpr name, List<Expr>? arguments, int startPos, int endPos) : Expr(startPos, endPos)
+    public class FunctionCallExpr(IdentifierExpr name, List<Expr>? arguments, CodeLocation codeLocation) : Expr(codeLocation)
     {
         public IdentifierExpr Name { get; } = name;
         public List<Expr>? Arguments { get; } = arguments;
     }
 
-    public class IdentifierExpr(string name, int startPos, int endPos) : Expr(startPos, endPos)
+    public class IdentifierExpr(string name, CodeLocation codeLocation) : Expr(codeLocation)
     {
         public string Name { get; } = name;
     }
 
-    public class AssignmentStmt(IdentifierExpr name, Expr? value, IdentifierExpr type, int startPos, int endPos)
-        : Stmt(startPos, endPos)
+    public class AssignmentStmt(IdentifierExpr name, Expr? value, IdentifierExpr? type, CodeLocation codeLocation)
+        : Stmt(codeLocation)
     {
         public IdentifierExpr Name { get; } = name;
         public IdentifierExpr? Type { get; set; } = type;
@@ -60,14 +61,14 @@
     }
 
     // Statement Nodes
-    public abstract class Stmt(int startPos, int endPos) : AstNode(startPos, endPos);
+    public abstract class Stmt(CodeLocation codeLocation) : AstNode(codeLocation);
 
-    public class ExprStmt(Expr expression, int startPos, int endPos) : Stmt(startPos, endPos)
+    public class ExprStmt(Expr expression, CodeLocation codeLocation) : Stmt(codeLocation)
     {
         public Expr Expression { get; } = expression;
     }
 
-    public class ReturnStmt(Expr value, int startPos, int endPos) : Stmt(startPos, endPos)
+    public class ReturnStmt(Expr value, CodeLocation codeLocation) : Stmt(codeLocation)
     {
         public Expr Value { get; } = value;
     }
@@ -77,9 +78,8 @@
         BlockStmt thenBranch,
         BlockStmt? elseBranch,
         List<(Expr, BlockStmt)>? elifBranches,
-        int startPos,
-        int endPos)
-        : Stmt(startPos, endPos)
+        CodeLocation codeLocation)
+        : Stmt(codeLocation)
     {
         public Expr Condition { get; } = condition;
         public BlockStmt ThenBranch { get; } = thenBranch;
@@ -88,7 +88,7 @@
     }
 
     // Block Statement
-    public class BlockStmt(List<Stmt> statements, int startPos, int endPos) : Stmt(startPos, endPos)
+    public class BlockStmt(List<Stmt> statements, CodeLocation codeLocation) : Stmt(codeLocation)
     {
         public List<Stmt> Statements { get; } = statements;
     }
@@ -97,20 +97,19 @@
     public class WhileLoop(
         Expr condition,
         BlockStmt body,
-        int startPos,
-        int endPos) : Stmt(startPos, endPos)
+        CodeLocation codeLocation) : Stmt(codeLocation)
     {
         public Expr Condition { get; } = condition;
         public BlockStmt Body { get; } = body;
     }
 
-    public class ParameterExpr(IdentifierExpr name, IdentifierExpr type, int startPos, int endPos) : Expr(startPos, endPos)
+    public class ParameterExpr(IdentifierExpr name, IdentifierExpr type, CodeLocation codeLocation) : Expr(codeLocation)
     {
         public IdentifierExpr Name = name;
         public IdentifierExpr Type = type;
     }
 
-    public class CastExpr(Expr prevExpr, IdentifierExpr destType, int startPos, int endPos) : Expr(startPos, endPos)
+    public class CastExpr(Expr prevExpr, IdentifierExpr destType, CodeLocation codeLocation) : Expr(codeLocation)
     {
         public Expr PrevExpr = prevExpr;
         public IdentifierExpr DestType = destType;
@@ -122,8 +121,7 @@
         bool isStatic,
         bool isPublic,
         Expr? value,
-        int startPos,
-        int endPos) : Expr(startPos, endPos)
+        CodeLocation codeLocation) : Expr(codeLocation)
     {
         public IdentifierExpr Name = name;
         public IdentifierExpr Type = type;
@@ -141,9 +139,8 @@
         bool @public,
         bool @static,
         bool @class,
-        int startPos,
-        int endPos)
-        : Stmt(startPos, endPos)
+        CodeLocation codeLocation)
+        : Stmt(codeLocation)
     {
         public IdentifierExpr Name { get; } = name;
         public IdentifierExpr ReturnType { get; } = returnType;
@@ -155,8 +152,8 @@
     }
 
     // Class Declaration
-    public class ClassDecl(string name, bool @public, List<FunctionDecl> methods, List<FieldStmt> fields, int startPos, int endPos)
-        : Stmt(startPos, endPos)
+    public class ClassDecl(string name, bool @public, List<FunctionDecl> methods, List<FieldStmt> fields, CodeLocation codeLocation)
+        : Stmt(codeLocation)
     {
         public string Name { get; } = name;
         public bool Public { get; } = @public;
@@ -164,7 +161,7 @@
         public List<FieldStmt> Field { get; } = fields;
     }
 
-    public class NamespaceDecl(string name, int startPos, int endPos) : Stmt(startPos, endPos)
+    public class NamespaceDecl(string name, CodeLocation codeLocation) : Stmt(codeLocation)
     {
         public string Name { get; } = name;
     }

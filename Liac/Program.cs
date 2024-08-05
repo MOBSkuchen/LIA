@@ -150,10 +150,13 @@ public class Liac
         
         if (options.EmitType!.Contains("tokens"))
         {
+            Console.WriteLine("---------------------------------------------------------------------------------------------------");
+            Console.WriteLine("FILE | TOT POS START : TOT POS END / LINE START - LINE END / POS START : POS END | [TYPE] = CONTENT");
             foreach (var token in lexer.Tokens)
             {
-                Console.WriteLine($"{token.StartPos}-{token.EndPos} : {token.Type} = '{token.Content}'");
+                Console.WriteLine($"| '{token.CodeLocation.CodeFile.Filepath}' | {token.CodeLocation.StartPosition}-{token.CodeLocation.EndPosition} / {token.LinePos.Item1}-{token.LinePos.Item3} / {token.LinePos.Item2}:{token.LinePos.Item4} | [{token.Type}] = '{token.Content}'");
             }
+            Console.WriteLine("---------------------------------------------------------------------------------------------------");
         }
         
         Console.Write("Parsing ...");

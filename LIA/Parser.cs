@@ -30,7 +30,7 @@ public class Parser(Lexer lexer)
 
     public void ThrowSyntaxError(int startPos, int endPos, string message)
     {
-        Errors.ThrowCodeError(GenCodeLocationForLoc(startPos, endPos), message, ErrorCodes.SyntaxError);
+        Errors.ThrowCodeError(new CodeLocation(startPos, endPos, lexer.CodeFile), message, ErrorCodes.SyntaxError);
     } 
 
     private Token Consume(TokenType type, string? context)
@@ -56,11 +56,10 @@ public class Parser(Lexer lexer)
         return false;
     }
 
-    private CodeLocation GenCodeLocationForLoc(int startPos, int endPos) => new(startPos, endPos, CodeFile);
-    private CodeLocation GenCodeLocationForToken(Token token) => new (token.StartPos, token.EndPos, CodeFile);
-    private CodeLocation GenCodeLocationForCurrent(bool isEof) => !isEof ? GenCodeLocationForToken(CurrentToken) : new CodeLocation(PreviousToken.EndPos, PreviousToken.EndPos, CodeFile);
-
-    private void GenCodeError(string message, ErrorCodes errNum, bool isEof=false) => Errors.ThrowCodeError(GenCodeLocationForCurrent(isEof), message, errNum);
+    public CodeLocation MergeCodeLocation(CodeLocation startTok, CodeLocation endTok) => new CodeLocation(
+        startTok.StartPosition, endTok.StartPosition, endTok.CodeFile);
+    
+    private void GenCodeError(string message, ErrorCodes errNum, bool isEof=false) => Errors.ThrowCodeError(!isEof ? CurrentToken!.CodeLocation : PreviousToken!.CodeLocation, message, errNum);
 
     private int GetOperatorPrecedence(TokenType type)
     {
@@ -92,7 +91,7 @@ public class Parser(Lexer lexer)
     private Expr? ParseExpression(int precedence = 0)
     {
         Expr? left = ParseUnary();
-        if (left == null) ThrowSyntaxError(PreviousToken.StartPos, PreviousToken.EndPos, "Expected an expression after this but got nothing");
+        if (left == null) ThrowSyntaxError(PreviousToken!.CodeLocation.StartPosition, PreviousToken.CodeLocation.EndPosition, "Expected an expression after this but got nothing");
 
         while (true)
         {
@@ -106,17 +105,17 @@ public class Parser(Lexer lexer)
             if (currentOp == TokenType.As)
             {
                 Consume(TokenType.Identifier, $"Expected a type for a Cast-Expression");
-                var typeTok = new IdentifierExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
-                return new CastExpr(left!, typeTok, left!.StartPos, typeTok.EndPos);
+                var typeTok = new IdentifierExpr(PreviousToken!.Content, PreviousToken.CodeLocation);
+                return new CastExpr(left!, typeTok, MergeCodeLocation(left!.CodeLocation, typeTok.CodeLocation));
             }
             int nextPrecedence = GetOperatorPrecedence(currentOp.Value);
             Expr? right = ParseExpression(nextPrecedence);
             if (right == null)
             {
-                ThrowInvalidTokenError(TokenType.ExpressionLike, CurrentToken.Type, "Missing right-side expression");
+                ThrowInvalidTokenError(TokenType.ExpressionLike, CurrentToken!.Type, "Missing right-side expression");
             }
 
-            left = new BinaryExpr(left, currentOp.Value, right, left.StartPos, right.EndPos);
+            left = new BinaryExpr(left!, currentOp.Value, right!, MergeCodeLocation(left!.CodeLocation, right!.CodeLocation));
         }
 
         return left;
@@ -126,13 +125,13 @@ public class Parser(Lexer lexer)
     {
         if (Match(TokenType.Plus, TokenType.Minus))
         {
-            TokenType unaryOp = PreviousToken.Type;
+            TokenType unaryOp = PreviousToken!.Type;
             Expr? operand = ParseUnary();
             if (operand == null)
             {
-                ThrowInvalidTokenError(TokenType.Operand, CurrentToken.Type, "Missing operand");
+                ThrowInvalidTokenError(TokenType.Operand, CurrentToken!.Type, "Missing operand");
             }
-            return new UnaryExpr(unaryOp, operand, PreviousToken.StartPos, operand.EndPos);
+            return new UnaryExpr(unaryOp, operand!, MergeCodeLocation(PreviousToken.CodeLocation, operand!.CodeLocation));
         }
 
         return ParsePrimary();
@@ -159,26 +158,26 @@ public class Parser(Lexer lexer)
     {
         if (Match(TokenType.Number))
         {
-            if (!long.TryParse(PreviousToken.Content, out var num))
+            if (!long.TryParse(PreviousToken!.Content, out var num))
             {
                 if (!double.TryParse(PreviousToken.Content, out var flt)) throw new Exception("Lexer fucked up");
-                return new FloatExpr(flt, PreviousToken.StartPos, PreviousToken.EndPos);
+                return new FloatExpr(flt, PreviousToken.CodeLocation);
             }
-            return new IntegerExpr(num, PreviousToken.StartPos, PreviousToken.EndPos);
+            return new IntegerExpr(num, PreviousToken.CodeLocation);
         }
         if (Match(TokenType.Identifier))
         {
-            var ident = new IdentifierExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
+            var ident = new IdentifierExpr(PreviousToken!.Content, PreviousToken.CodeLocation);
             if (Match(TokenType.OpenParen))
             {
-                return new FunctionCallExpr(ident, ParseArguments(), ident.StartPos, CurrentToken.EndPos);
+                return new FunctionCallExpr(ident, ParseArguments(), MergeCodeLocation(ident.CodeLocation, CurrentToken!.CodeLocation));
             }
             return ident;
         }
 
         if (Match(TokenType.String))
         {
-            return new StringExpr(PreviousToken.Content, PreviousToken.StartPos, PreviousToken.EndPos);
+            return new StringExpr(PreviousToken!.Content, PreviousToken.CodeLocation);
         }
         
         if (Match(TokenType.OpenParen))
@@ -193,25 +192,25 @@ public class Parser(Lexer lexer)
 
     private ReturnStmt ParseReturn()
     {
-        int startPos = PreviousToken.StartPos;
+        var startPos = PreviousToken.CodeLocation;
         var toReturn = ParseExpression();
-        return new ReturnStmt(toReturn, startPos, PreviousToken.EndPos);
+        return new ReturnStmt(toReturn!, MergeCodeLocation(startPos, PreviousToken.CodeLocation));
     }
 
     private WhileLoop ParseWhile()
     {
-        int startPos = PreviousToken.StartPos;
+        var startPos = PreviousToken!.CodeLocation;
         var condition = ParseExpression();
         Consume(TokenType.Colon, "Missing body");
         var body = ParseBody();
-        return new WhileLoop(condition, body, startPos, CurrentToken.EndPos);
+        return new WhileLoop(condition!, body, MergeCodeLocation(startPos, CurrentToken!.CodeLocation));
     }
 
     private IfStmt ParseIf()
     {
         List<(Expr, BlockStmt)> elifBranches = new List<(Expr, BlockStmt)>();
         BlockStmt? elseBranch = null;
-        int startPos = PreviousToken!.StartPos;
+        var startPos = PreviousToken!.CodeLocation;
         var condition = ParseExpression();
         Consume(TokenType.Colon, "Missing body");
         var body = ParseBody();
@@ -227,33 +226,33 @@ public class Parser(Lexer lexer)
             Consume(TokenType.Colon, "Missing body");
             elseBranch = ParseBody();
         }
-        return new IfStmt(condition!, body, elseBranch, elifBranches, startPos, CurrentToken!.EndPos);
+        return new IfStmt(condition!, body, elseBranch, elifBranches, MergeCodeLocation(startPos, CurrentToken!.CodeLocation));
     }
 
     private AssignmentStmt ParseAssignment()
     {
-        IdentifierExpr name = new IdentifierExpr(PreviousToken!.Content, PreviousToken.StartPos, PreviousToken.EndPos);
+        IdentifierExpr name = new IdentifierExpr(PreviousToken!.Content, PreviousToken.CodeLocation);
         IdentifierExpr? type = null;
         if (Match(TokenType.Colon))
         {
             var token = Consume(TokenType.Identifier, "Expected a type annotation due to previous colon, " +
                                                       "which means that a type (identifier) must follow");
-            type = new IdentifierExpr(token.Content, token.StartPos, token.EndPos);
+            type = new IdentifierExpr(token.Content, token.CodeLocation);
         }
 
         if (Match(TokenType.Equals))
         {
             var expr = ParseExpression();
-            return new AssignmentStmt(name, expr, type, name.StartPos, CurrentToken!.EndPos);
+            return new AssignmentStmt(name, expr, type, MergeCodeLocation(name.CodeLocation, CurrentToken!.CodeLocation));
         } 
         if (type == null) ThrowSyntaxError(name.StartPos, name.EndPos, $"Expected a value or type annotation for the declared variable '{name.Name}'");
-        else return new AssignmentStmt(name, null, type, name.StartPos, CurrentToken!.EndPos);
+        else return new AssignmentStmt(name, null, type, MergeCodeLocation(name.CodeLocation, CurrentToken!.CodeLocation));
         return null;
     }
 
     private Stmt? ParseStatement()
     {
-        int startPos = CurrentToken.StartPos;
+        var startPos = CurrentToken.CodeLocation;
         if (Match(TokenType.Return)) return ParseReturn();
         if (Match(TokenType.While)) return ParseWhile();
         if (Match(TokenType.If)) return ParseIf();
@@ -267,7 +266,7 @@ public class Parser(Lexer lexer)
 
         if (Match(TokenType.Identifier, TokenType.Number,
                 TokenType.ExclamationMark, TokenType.Minus, TokenType.String,
-                TokenType.OpenParen)) return new ExprStmt(ParseExpression()!, startPos, CurrentToken.EndPos);
+                TokenType.OpenParen)) return new ExprStmt(ParseExpression()!, MergeCodeLocation(startPos, CurrentToken.CodeLocation));
 
         ThrowInvalidTokenError(TokenType.Statement, CurrentToken.Type, "Expected a statement");
         return null;
@@ -276,13 +275,13 @@ public class Parser(Lexer lexer)
     private BlockStmt ParseBody()
     {
         List<Stmt> statements = new List<Stmt>();
-        int startPos = CurrentToken!.StartPos;
+        var startPos = CurrentToken!.CodeLocation;
         while (!IsAtEnd())
         {
             var stmt = ParseStatement();
             if (stmt == null) continue;
             statements.Add(stmt);
-            if (Match(TokenType.Semicolon)) return new BlockStmt(statements, startPos, PreviousToken!.EndPos);
+            if (Match(TokenType.Semicolon)) return new BlockStmt(statements, MergeCodeLocation(startPos, PreviousToken!.CodeLocation));
         }
 
         ThrowInvalidTokenError(TokenType.Semicolon, CurrentToken.Type, "Expected a closing semicolon");
@@ -290,7 +289,7 @@ public class Parser(Lexer lexer)
     }
 
     public IdentifierExpr CreateIdent(Token token) =>
-        new (token.Content, token.StartPos, token.EndPos);
+        new (token.Content, token.CodeLocation);
     
     private List<ParameterExpr> ParseParameters()
     {
@@ -302,9 +301,10 @@ public class Parser(Lexer lexer)
                 "Expected a parameter declaration or closing parenthesis");
             Consume(TokenType.Colon, "Expected a colon here");
             var type = Consume(TokenType.Identifier, "Parameters must have types");
-            parameters.Add(new ParameterExpr(CreateIdent(name), CreateIdent(type), name.StartPos, type.EndPos));
+            parameters.Add(new ParameterExpr(CreateIdent(name), CreateIdent(type), MergeCodeLocation(name.CodeLocation, type.CodeLocation)));
             if (Match(TokenType.Comma)) continue;
-            ThrowInvalidTokenError(TokenType.CloseParen, CurrentToken.Type, "Expected a closing parenthesis");
+            if (Match(TokenType.CloseParen)) break;
+            ThrowInvalidTokenError(TokenType.CloseParen, CurrentToken!.Type, "Expected a closing parenthesis");
         }
 
         return parameters;
@@ -312,7 +312,7 @@ public class Parser(Lexer lexer)
     
     private FunctionDecl ParseFunction()
     {
-        int startPos = PreviousToken.StartPos;
+        var startPos = PreviousToken!.CodeLocation;
         bool isPublic = Match(TokenType.Public);
         bool isClass = Match(TokenType.Class);
         bool isStatic = !isClass && Match(TokenType.Static);
@@ -323,24 +323,24 @@ public class Parser(Lexer lexer)
         if (Match(TokenType.OpenParen)) parameters = ParseParameters();
         Consume(TokenType.Colon, "Expected colon after function-head declaration");
         var body = ParseBody();
-        return new FunctionDecl(CreateIdent(name), CreateIdent(type), parameters, body, isPublic, isStatic, isClass, startPos, CurrentToken.EndPos);
+        return new FunctionDecl(CreateIdent(name), CreateIdent(type), parameters, body, isPublic, isStatic, isClass, MergeCodeLocation(startPos, CurrentToken!.CodeLocation));
     }
 
     private FieldStmt ParseField()
     {
-        int startPos = PreviousToken.StartPos;
+        var startPos = PreviousToken!.CodeLocation;
         bool isPublic = Match(TokenType.Public);
         bool isStatic = Match(TokenType.Static);
         if (!isPublic) Consume(TokenType.Private, "Must declare public or private field");
         var type = CreateIdent(Consume(TokenType.Identifier, "Must declare a field type"));
         var name = CreateIdent(Consume(TokenType.Identifier, "Must declare the name"));
         Expr? value = Match(TokenType.Equals) ? ParseExpression() : null;
-        return new FieldStmt(name, type, isStatic, isPublic, value, startPos, PreviousToken.EndPos);
+        return new FieldStmt(name, type, isStatic, isPublic, value, MergeCodeLocation(startPos, PreviousToken.CodeLocation));
     }
 
     private ClassDecl ParseClass()
     {
-        int startPos = PreviousToken.StartPos;
+        var startPos = PreviousToken!.CodeLocation;
         bool isPublic = Match(TokenType.Public);
         if (!isPublic) Consume(TokenType.Private, "Must declare public or private class");
         var name = Consume(TokenType.Identifier, "Must declare the name").Content;
@@ -357,7 +357,7 @@ public class Parser(Lexer lexer)
                 fields.Add(ParseField());
             }
             else if (Match(TokenType.Semicolon))
-                return new ClassDecl(name, isPublic, methods, fields, startPos, PreviousToken.EndPos);
+                return new ClassDecl(name, isPublic, methods, fields, MergeCodeLocation(startPos, PreviousToken.CodeLocation));
             else break;
         }
         ThrowInvalidTokenError(TokenType.ClassLevel, CurrentToken!.Type, "For example a function definition or terminating semicolon");
@@ -372,7 +372,7 @@ public class Parser(Lexer lexer)
             if (Match(TokenType.Namespace))
             {
                 var curTok = Consume(TokenType.Identifier, "Namespace must have a name");
-                statements.Add(new NamespaceDecl(curTok.Content, PreviousToken!.StartPos, CurrentToken!.EndPos));
+                statements.Add(new NamespaceDecl(curTok.Content, MergeCodeLocation(PreviousToken!.CodeLocation, CurrentToken!.CodeLocation)));
             }
             else if (Match(TokenType.Class))
             {

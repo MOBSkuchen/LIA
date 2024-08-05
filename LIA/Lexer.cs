@@ -246,16 +246,18 @@
         public TokenType Type { get; }
         public string Content { get; }
         public Lexer Lexer { get; }
-        public int StartPos { get; }
-        public int EndPos { get; }
+        public CodeLocation CodeLocation { get; }
+        public (int, int, int, int) LinePos { get; }
 
         public Token(TokenType type, string content, Lexer lexer, int startPos, int endPos)
         {
             Type = type;
             Content = content;
             Lexer = lexer;
-            StartPos = startPos;
-            EndPos = endPos;
+            CodeLocation = new CodeLocation(startPos, endPos, lexer.CodeFile);
+            var ts = Utils.GetLineNumber(CodeLocation.CodeFile.Text, CodeLocation.StartPosition);
+            var te = Utils.GetLineNumber(CodeLocation.CodeFile.Text, CodeLocation.EndPosition);
+            LinePos = (ts.Item1, ts.Item2, te.Item1, te.Item2);
         }
     }
 }

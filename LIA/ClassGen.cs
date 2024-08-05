@@ -47,7 +47,7 @@ public class ClassGen
     public FunctionGen SpawnFunction(string name, bool isStatic, bool isPublic, bool isClassMethod, TypeEm typeEm, List<(string, TypeEm)>? args, bool isBuiltin)
     {
         bool specialMethod = SpecialMethods.Contains(name);
-        var functionAttributes = new FunctionAttributes($"{ClassAttributes.NameSpace}.{ClassAttributes.Name}",
+        var functionAttributes = new FunctionAttributes(ClassAttributes.NameSpace,
             ClassAttributes.Name, name, isStatic, isPublic, isClassMethod, typeEm, args, specialMethod, isBuiltin);
         var function = new FunctionGen(functionAttributes, this);
         if (isClassMethod && !specialMethod)
