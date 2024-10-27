@@ -99,4 +99,5 @@ public enum WarningCodes
     UselessCode,
     UnreachableCode,
     InvalidClassMethod,
+    InvalidArchitecture,
 }

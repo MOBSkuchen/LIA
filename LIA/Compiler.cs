@@ -43,6 +43,8 @@ public class Compiler
     {
         _codeFile = codeFile;
         _globalDeclarations = BuiltinTypes;
+        _globalDeclarations["i64"].Is32BitConform = false;
+        _globalDeclarations["f64"].Is32BitConform = false;
 
         foreach (var classGen in new List<ClassGen> {_globalDeclarations["i32"], _globalDeclarations["i64"], _globalDeclarations["f32"], _globalDeclarations["f64"]})
         {
@@ -98,6 +100,8 @@ public class Compiler
 
     private TypeEm? RawConvertType(string name)
     {
+        TypeEm? retType = null;
+        
         bool isRef = false;
         bool goesOut = false;
         if (name.EndsWith("_"))
@@ -111,9 +115,10 @@ public class Compiler
             name = name.Substring(1, name.Length - 1);
         }
         
-        if (_globalDeclarations.TryGetValue(name, out var type)) return new TypeEm(type.GetRealType, isRef, goesOut);
-        if (CurrentNameSpace.Classes.TryGetValue(name, out var type2)) return new TypeEm(type2.Item2.GetRealType, isRef, goesOut);
-        return null;
+        if (_globalDeclarations.TryGetValue(name, out var type)) retType = new TypeEm(type.GetRealType, isRef, goesOut);
+        else if (CurrentNameSpace.Classes.TryGetValue(name, out var type2)) retType = new TypeEm(type2.Item2.GetRealType, isRef, goesOut);
+        if (retType is {RealType.ClassGen.Is32BitConform: false} && GlobalContext.is32bit) Errors.Warning(WarningCodes.InvalidArchitecture, "64 bit type in 32 bit mode! This will result in a memory error.");
+        return retType;
     }
 
     private List<(string, TypeEm)> ConvertParameters(List<ParameterExpr> parameters)

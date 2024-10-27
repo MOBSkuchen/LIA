@@ -10,7 +10,6 @@ public class Liac
 {
     private class Options
     {
-        
         [Verb("compile", HelpText = "Compile file")]
         public class CompileOptions
         {
@@ -114,7 +113,7 @@ public class Liac
         if (ilasmLoc == null || !Path.Exists(ilasmLoc)) Errors.Error(ErrorCodes.IlasmNotFound, "ilasm.exe was not found, please ensure that you have it installed or specify a valid location using --ilcompiler <path> / -l <path>");
         var processArguments = new List<string> {ilasmLoc, ilPath, "/QUIET", "/NOLOGO"};
         if (b64) processArguments.Add("/PE64");
-        else processArguments.Add("/PE32");
+        else processArguments.Add("/32BITPREFERRED");
         switch (other)
         {
             case "arm":
@@ -124,8 +123,10 @@ public class Liac
                 processArguments.Add("/ITANIUM");
                 break;
             default:
-                processArguments.Add("/X64");
+            {
+                if (b64) processArguments.Add("/X64");
                 break;
+            }
         }
         processArguments.Add($"/OUTPUT={outputFile}");
         options.BuildType = options.BuildType!.ToLower();
@@ -138,6 +139,13 @@ public class Liac
     {
         GlobalContext.DevDebug = options.DevDebug;
         
+        options.Arch = options.Arch!.ToLower();
+        if (options.Arch!.Contains("/"))
+        {
+            var splitA = options.Arch!.Split("/");
+            GlobalContext.is32bit = splitA[1] == "32";
+        }
+
         if (!File.Exists(options.InputFile)) Errors.Error(ErrorCodes.UnaccessibleFile, $"Input file '{options.InputFile}' does not exist");
         
         Console.Write("Tokenizing...");
@@ -150,13 +158,13 @@ public class Liac
         
         if (options.EmitType!.Contains("tokens"))
         {
-            Console.WriteLine("---------------------------------------------------------------------------------------------------");
-            Console.WriteLine("FILE | TOT POS START : TOT POS END / LINE START - LINE END / POS START : POS END | [TYPE] = CONTENT");
+            Console.WriteLine("-----------------------------------------------------------------------------------------------------");
+            Console.WriteLine("| FILE | TOT POS START : TOT POS END / LINE START - LINE END / POS START : POS END | [TYPE] = CONTENT");
             foreach (var token in lexer.Tokens)
             {
                 Console.WriteLine($"| '{token.CodeLocation.CodeFile.Filepath}' | {token.CodeLocation.StartPosition}-{token.CodeLocation.EndPosition} / {token.LinePos.Item1}-{token.LinePos.Item3} / {token.LinePos.Item2}:{token.LinePos.Item4} | [{token.Type}] = '{token.Content}'");
             }
-            Console.WriteLine("---------------------------------------------------------------------------------------------------");
+            Console.WriteLine("-----------------------------------------------------------------------------------------------------");
         }
         
         Console.Write("Parsing ...");
@@ -164,12 +172,12 @@ public class Liac
         var ast = parser.ParseTopLevel();
         
         Console.Write(" done.\n");
-        Console.Write("Compiling to CIL ...");
+        Console.Write("Compiling to CIL ...\n");
         var compiler = new Compiler(codeFile);
         
         compiler.ParseTopLevel(ast);
 
-        Console.Write(" done.\n");
+        Console.Write("Done.");
         if (options.BuildType! != "nil")
         {
             if (options.BuildType! != "exe") GlobalContext.RequireMainDefinition = false;
@@ -177,9 +185,10 @@ public class Liac
             var ilPath = compiler.WriteToPath(options.EmitType!.Contains("il") ? compiler.GetNewPath() : Path.GetTempFileName());
             var emitTimes = options.EmitType!.Contains("time");     // TODO: Handle this
             var processArgs = CompileIl(options, ilPath, outputFile);
+            Console.WriteLine("Compiling IL");
+            if (options.EmitType!.Contains("ilopts")) Console.WriteLine($"Running > {string.Join(' ', processArgs)}");
             var exePath = processArgs[0]; processArgs.RemoveAt(0);
         
-            Console.WriteLine("Compiling IL");
             var proc = Process.Start(exePath, processArgs);
             proc.WaitForExit();
 

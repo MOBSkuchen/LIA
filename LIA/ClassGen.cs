@@ -26,7 +26,8 @@ public class ClassGen
         ".cctor",
         "init"
     ];
-    
+
+    public bool Is32BitConform = true;
     private readonly string _head;
     public ClassAttributes ClassAttributes;
     public RealType GetRealType => new (this);
@@ -43,7 +44,7 @@ public class ClassGen
         ClassAttributes = classAttributes;
         _head = classAttributes.Generate();
     }
-
+    
     public FunctionGen SpawnFunction(string name, bool isStatic, bool isPublic, bool isClassMethod, TypeEm typeEm, List<(string, TypeEm)>? args, bool isBuiltin)
     {
         bool specialMethod = SpecialMethods.Contains(name);
